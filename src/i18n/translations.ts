@@ -439,7 +439,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "Все права защищены",
-      manas: "Для студентов КТУ «Манас»",
+      branches: "Наши филиалы",
+      openMap: "Открыть карту",
+      branchList: [
+        { name: "Джал", address: "Джал 30-43а, Бишкек", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Филармония", address: "пр. Чуй, 251, Бишкек", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Комок", address: "ул. Джаманбаева, 35а/1, Бишкек", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
   en: {
