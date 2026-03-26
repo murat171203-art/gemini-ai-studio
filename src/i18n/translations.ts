@@ -14,6 +14,14 @@ export const languageFlags: Record<Language, string> = {
   en: "🇬🇧",
 };
 
+type Branch = {
+  name: string;
+  address: string;
+  hours: string;
+  phone: string;
+  mapLink: string;
+};
+
 type TranslationKeys = {
   nav: {
     home: string;
@@ -112,7 +120,9 @@ type TranslationKeys = {
   };
   footer: {
     rights: string;
-    manas: string;
+    branches: string;
+    openMap: string;
+    branchList: Branch[];
   };
 };
 
