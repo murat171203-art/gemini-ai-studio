@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
-import { Upload, Brain, CreditCard, Download, Sparkles, Zap, Shield, FileStack, ChevronDown } from "lucide-react";
+import { Upload, Brain, CreditCard, Download, Sparkles, Zap, Shield, FileStack, ChevronDown, MapPin, Clock, Phone, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -210,7 +210,60 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA */}
+
+      {/* Branches */}
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <motion.h2
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            {t.footer.branches}
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {t.footer.branchList.map((branch, i) => (
+              <motion.div
+                key={i}
+                className="glass rounded-xl p-6 hover:neon-border transition-all duration-300 space-y-3"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={i}
+              >
+                <h3 className="font-semibold text-lg text-foreground">{branch.name}</h3>
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <span>{branch.address}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>{branch.hours}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="w-4 h-4 text-primary flex-shrink-0" />
+                  <a href={`tel:${branch.phone.replace(/\s/g, "")}`} className="hover:text-primary transition-colors">
+                    {branch.phone}
+                  </a>
+                </div>
+                <a
+                  href={branch.mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  {t.footer.openMap}
+                </a>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-24">
         <div className="container mx-auto px-4 text-center">
           <motion.div

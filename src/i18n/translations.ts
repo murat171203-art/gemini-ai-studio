@@ -14,6 +14,14 @@ export const languageFlags: Record<Language, string> = {
   en: "🇬🇧",
 };
 
+type Branch = {
+  name: string;
+  address: string;
+  hours: string;
+  phone: string;
+  mapLink: string;
+};
+
 type TranslationKeys = {
   nav: {
     home: string;
@@ -112,7 +120,9 @@ type TranslationKeys = {
   };
   footer: {
     rights: string;
-    manas: string;
+    branches: string;
+    openMap: string;
+    branchList: Branch[];
   };
 };
 
@@ -215,7 +225,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "Бардык укуктар корголгон",
-      manas: "КТУ «Манас» студенттери үчүн",
+      branches: "Биздин филиалдар",
+      openMap: "Картадан көрүү",
+      branchList: [
+        { name: "Джал", address: "Джал 30-43а, Бишкек", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Филармония", address: "Чүй проспектиси, 251, Бишкек", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Комок", address: "Жаманбаев к., 35а/1, Бишкек", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
   tr: {
@@ -316,7 +332,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "Tüm hakları saklıdır",
-      manas: "KTMÜ «Manas» öğrencileri için",
+      branches: "Şubelerimiz",
+      openMap: "Haritada gör",
+      branchList: [
+        { name: "Jal", address: "Jal 30-43a, Bişkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Filarmoni", address: "Çüy Cad., 251, Bişkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Komok", address: "Camanbaev Sk., 35a/1, Bişkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
   ru: {
@@ -417,7 +439,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "Все права защищены",
-      manas: "Для студентов КТУ «Манас»",
+      branches: "Наши филиалы",
+      openMap: "Открыть карту",
+      branchList: [
+        { name: "Джал", address: "Джал 30-43а, Бишкек", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Филармония", address: "пр. Чуй, 251, Бишкек", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Комок", address: "ул. Джаманбаева, 35а/1, Бишкек", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
   en: {
@@ -518,7 +546,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "All rights reserved",
-      manas: "For KTMU «Manas» students",
+      branches: "Our Branches",
+      openMap: "View on map",
+      branchList: [
+        { name: "Jal", address: "Jal 30-43a, Bishkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Philharmonic", address: "Chuy Ave, 251, Bishkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Komok", address: "Jamanbaev St, 35a/1, Bishkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
 };
