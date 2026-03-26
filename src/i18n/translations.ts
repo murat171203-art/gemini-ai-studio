@@ -546,7 +546,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "All rights reserved",
-      manas: "For KTMU «Manas» students",
+      branches: "Our Branches",
+      openMap: "View on map",
+      branchList: [
+        { name: "Jal", address: "Jal 30-43a, Bishkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Philharmonic", address: "Chuy Ave, 251, Bishkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Komok", address: "Jamanbaev St, 35a/1, Bishkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
 };
