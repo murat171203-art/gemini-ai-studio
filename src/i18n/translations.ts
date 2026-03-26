@@ -332,7 +332,13 @@ export const translations: Record<Language, TranslationKeys> = {
     },
     footer: {
       rights: "Tüm hakları saklıdır",
-      manas: "KTMÜ «Manas» öğrencileri için",
+      branches: "Şubelerimiz",
+      openMap: "Haritada gör",
+      branchList: [
+        { name: "Jal", address: "Jal 30-43a, Bişkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
+        { name: "Filarmoni", address: "Çüy Cad., 251, Bişkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
+        { name: "Komok", address: "Camanbaev Sk., 35a/1, Bişkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+      ],
     },
   },
   ru: {
