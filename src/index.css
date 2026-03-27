@@ -83,9 +83,10 @@
   }
 
   .neon-border {
-    border-color: hsl(var(--primary) / 0.5);
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.15),
-                inset 0 0 15px hsl(var(--primary) / 0.05);
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 8px 30px hsl(var(--primary) / 0.35),
+                0 15px 50px hsl(var(--primary) / 0.2),
+                0 25px 80px hsl(var(--primary) / 0.1);
   }
 
   .neon-glow {
