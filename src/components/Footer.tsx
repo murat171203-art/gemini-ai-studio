@@ -16,7 +16,7 @@ const Footer = () => {
             {t.footer.branchList.map((branch, i) => (
               <div
                 key={i}
-                className="glass rounded-xl p-5 hover:neon-border transition-all duration-300 space-y-3"
+                className="glass rounded-xl p-5 hover:neon-border hover:bg-yellow-400/10 transition-all duration-300 space-y-3"
               >
                 <h4 className="font-semibold text-base text-foreground">{branch.name}</h4>
                 <div className="flex items-start gap-2 text-sm text-muted-foreground">
