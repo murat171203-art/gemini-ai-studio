@@ -80,6 +80,14 @@ type TranslationKeys = {
     maxSize: string;
     uploading: string;
     analyzing: string;
+    stage1: string;
+    stage2: string;
+    stage3: string;
+    reportTitle: string;
+    reportTables: string;
+    reportSpacing: string;
+    reportReady: string;
+    fileRetention: string;
   };
   analysis: {
     title: string;
