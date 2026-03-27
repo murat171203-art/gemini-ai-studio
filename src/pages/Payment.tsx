@@ -1,10 +1,21 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CreditCard, QrCode } from "lucide-react";
+import { CreditCard, QrCode, CheckCircle, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Payment = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<"pending" | "verifying" | "success">("pending");
+
+  const handleIPaid = () => {
+    setStatus("verifying");
+    setTimeout(() => {
+      setStatus("success");
+    }, 3000);
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
@@ -13,25 +24,59 @@ const Payment = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="w-14 h-14 rounded-xl bg-primary/20 neon-border flex items-center justify-center mx-auto mb-6">
-          <CreditCard className="w-7 h-7 text-primary" />
-        </div>
-        <h1 className="text-2xl font-bold mb-2">{t.payment.title}</h1>
-        <p className="text-muted-foreground mb-6">
-          {t.payment.amount}: <span className="text-foreground font-bold text-xl">250 сом</span>
-        </p>
-
-        {/* QR Code placeholder */}
-        <div className="glass rounded-xl p-6 mb-6 inline-block">
-          <div className="w-48 h-48 bg-secondary rounded-lg flex items-center justify-center mx-auto">
-            <QrCode className="w-24 h-24 text-muted-foreground" />
+        {status === "success" ? (
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <CheckCircle className="w-7 h-7 text-green-400" />
+            </div>
+            <h1 className="text-2xl font-bold">{t.payment.success}</h1>
+            <p className="text-muted-foreground text-sm mb-4">
+              {t.download.thankYou}
+            </p>
+            <Button
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 neon-glow flex items-center gap-2"
+              onClick={() => navigate("/download")}
+            >
+              <Download className="w-4 h-4" />
+              {t.download.downloadBtn}
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">{t.payment.scanQr}</p>
-        </div>
+        ) : (
+          <>
+            {/* MBank Logo */}
+            <div className="w-14 h-14 rounded-xl bg-green-600/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-green-400 font-bold text-lg">M</span>
+            </div>
+            <h2 className="text-sm font-semibold text-green-400 mb-4">MBank</h2>
 
-        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 neon-glow">
-          {t.payment.payWithMbank}
-        </Button>
+            <h1 className="text-2xl font-bold mb-2">{t.payment.title}</h1>
+            <p className="text-muted-foreground mb-6">
+              {t.payment.amount}: <span className="text-foreground font-bold text-xl">250 сом</span>
+            </p>
+
+            {/* QR Code */}
+            <div className="glass rounded-xl p-6 mb-6 inline-block">
+              <div className="w-48 h-48 bg-secondary rounded-lg flex items-center justify-center mx-auto">
+                <QrCode className="w-24 h-24 text-muted-foreground" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">{t.payment.scanQr}</p>
+            </div>
+
+            {status === "verifying" ? (
+              <Button disabled className="w-full flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t.payment.processing}
+              </Button>
+            ) : (
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white neon-glow"
+                onClick={handleIPaid}
+              >
+                {t.payment.iPaid || "Мен төлөдүм ✓"}
+              </Button>
+            )}
+          </>
+        )}
       </motion.div>
     </div>
   );

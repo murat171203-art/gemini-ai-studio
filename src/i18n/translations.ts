@@ -80,6 +80,14 @@ type TranslationKeys = {
     maxSize: string;
     uploading: string;
     analyzing: string;
+    stage1: string;
+    stage2: string;
+    stage3: string;
+    reportTitle: string;
+    reportTables: string;
+    reportSpacing: string;
+    reportReady: string;
+    fileRetention: string;
   };
   analysis: {
     title: string;
@@ -97,6 +105,7 @@ type TranslationKeys = {
     scanQr: string;
     processing: string;
     success: string;
+    iPaid: string;
   };
   download: {
     title: string;
@@ -185,6 +194,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Максималдуу өлчөмү: 20MB",
       uploading: "Жүктөлүүдө...",
       analyzing: "AI анализдөөдө...",
+      stage1: "Талааларды текшерүү (3см сол, 1.5см оң)...",
+      stage2: "Структураны анализдөө (Титулдук бет, Мазмуну)...",
+      stage3: "Нумерацияны жөндөө (Рим цифралары → Киришүү, Араб цифралары → негизги бөлүм)...",
+      reportTitle: "Анализ аяктады",
+      reportTables: "12 таблица табылды, форматтоо оңдолду",
+      reportSpacing: "1.5 интервалга ылайык чегинүүлөр оңдолду",
+      reportReady: "Документ төлөмдөн кийин жүктөп алууга даяр",
+      fileRetention: "Файлдар 14 күн сакталып, андан кийин жок кылынат",
     },
     analysis: {
       title: "Анализдин натыйжасы",
@@ -202,6 +219,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "QR кодду MBank тиркемесинен сканерлеңиз",
       processing: "Төлөм текшерилүүдө...",
       success: "Төлөм ийгиликтүү!",
+      iPaid: "Мен төлөдүм ✓",
     },
     download: {
       title: "Жүктөп алуу",
@@ -292,6 +310,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Maksimum boyut: 20MB",
       uploading: "Yükleniyor...",
       analyzing: "AI analiz ediyor...",
+      stage1: "Kenar boşlukları kontrol ediliyor (3cm sol, 1.5cm sağ)...",
+      stage2: "Yapı analiz ediliyor (Kapak sayfası, İçindekiler)...",
+      stage3: "Numaralandırma ayarlanıyor (Romen rakamları → Giriş, Arap rakamları → ana bölüm)...",
+      reportTitle: "Analiz tamamlandı",
+      reportTables: "12 tablo bulundu, biçimlendirme düzeltildi",
+      reportSpacing: "1.5 satır aralığına göre girintiler düzeltildi",
+      reportReady: "Belge ödeme sonrası indirmeye hazır",
+      fileRetention: "Dosyalar 14 gün saklanır, ardından silinir",
     },
     analysis: {
       title: "Analiz Sonucu",
@@ -309,6 +335,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "QR kodu MBank uygulamasından tarayın",
       processing: "Ödeme kontrol ediliyor...",
       success: "Ödeme başarılı!",
+      iPaid: "Ödedim ✓",
     },
     download: {
       title: "İndirme",
@@ -399,6 +426,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Максимальный размер: 20МБ",
       uploading: "Загрузка...",
       analyzing: "AI анализирует...",
+      stage1: "Проверка полей (3см слева, 1.5см справа)...",
+      stage2: "Анализ структуры (Титульный лист, Содержание)...",
+      stage3: "Настройка нумерации (Римские цифры → Введение, Арабские → основная часть)...",
+      reportTitle: "Анализ завершён",
+      reportTables: "Найдено 12 таблиц, форматирование исправлено",
+      reportSpacing: "Отступы исправлены под 1.5 интервала",
+      reportReady: "Документ готов к скачиванию после оплаты",
+      fileRetention: "Файлы хранятся 14 дней, затем удаляются",
     },
     analysis: {
       title: "Результат анализа",
@@ -416,6 +451,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "Отсканируйте QR-код в приложении MBank",
       processing: "Проверка оплаты...",
       success: "Оплата успешна!",
+      iPaid: "Я оплатил ✓",
     },
     download: {
       title: "Скачивание",
@@ -506,6 +542,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Maximum size: 20MB",
       uploading: "Uploading...",
       analyzing: "AI analyzing...",
+      stage1: "Checking margins (3cm left, 1.5cm right)...",
+      stage2: "Analyzing structure (Title page, Table of contents)...",
+      stage3: "Setting up numbering (Roman numerals → Introduction, Arabic → main sections)...",
+      reportTitle: "Analysis complete",
+      reportTables: "Found 12 tables, formatting corrected",
+      reportSpacing: "Indents corrected for 1.5 line spacing",
+      reportReady: "Document ready for download after payment",
+      fileRetention: "Files are stored for 14 days, then deleted",
     },
     analysis: {
       title: "Analysis Result",
@@ -523,6 +567,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "Scan the QR code in MBank app",
       processing: "Verifying payment...",
       success: "Payment successful!",
+      iPaid: "I have paid ✓",
     },
     download: {
       title: "Download",

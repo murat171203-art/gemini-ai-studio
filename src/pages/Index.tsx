@@ -227,7 +227,7 @@ const Index = () => {
             {t.footer.branchList.map((branch, i) => (
               <motion.div
                 key={i}
-                className="glass rounded-xl p-6 hover:neon-border transition-all duration-300 space-y-3"
+                className="glass rounded-xl p-6 hover:neon-border hover:bg-yellow-400/10 transition-all duration-300 space-y-3"
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
