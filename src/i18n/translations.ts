@@ -542,6 +542,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Maximum size: 20MB",
       uploading: "Uploading...",
       analyzing: "AI analyzing...",
+      stage1: "Checking margins (3cm left, 1.5cm right)...",
+      stage2: "Analyzing structure (Title page, Table of contents)...",
+      stage3: "Setting up numbering (Roman numerals → Introduction, Arabic → main sections)...",
+      reportTitle: "Analysis complete",
+      reportTables: "Found 12 tables, formatting corrected",
+      reportSpacing: "Indents corrected for 1.5 line spacing",
+      reportReady: "Document ready for download after payment",
+      fileRetention: "Files are stored for 14 days, then deleted",
     },
     analysis: {
       title: "Analysis Result",
@@ -559,6 +567,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "Scan the QR code in MBank app",
       processing: "Verifying payment...",
       success: "Payment successful!",
+      iPaid: "I have paid ✓",
     },
     download: {
       title: "Download",
