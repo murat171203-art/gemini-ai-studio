@@ -310,6 +310,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Maksimum boyut: 20MB",
       uploading: "Yükleniyor...",
       analyzing: "AI analiz ediyor...",
+      stage1: "Kenar boşlukları kontrol ediliyor (3cm sol, 1.5cm sağ)...",
+      stage2: "Yapı analiz ediliyor (Kapak sayfası, İçindekiler)...",
+      stage3: "Numaralandırma ayarlanıyor (Romen rakamları → Giriş, Arap rakamları → ana bölüm)...",
+      reportTitle: "Analiz tamamlandı",
+      reportTables: "12 tablo bulundu, biçimlendirme düzeltildi",
+      reportSpacing: "1.5 satır aralığına göre girintiler düzeltildi",
+      reportReady: "Belge ödeme sonrası indirmeye hazır",
+      fileRetention: "Dosyalar 14 gün saklanır, ardından silinir",
     },
     analysis: {
       title: "Analiz Sonucu",
@@ -327,6 +335,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "QR kodu MBank uygulamasından tarayın",
       processing: "Ödeme kontrol ediliyor...",
       success: "Ödeme başarılı!",
+      iPaid: "Ödedim ✓",
     },
     download: {
       title: "İndirme",
