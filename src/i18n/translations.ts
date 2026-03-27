@@ -194,6 +194,14 @@ export const translations: Record<Language, TranslationKeys> = {
       maxSize: "Максималдуу өлчөмү: 20MB",
       uploading: "Жүктөлүүдө...",
       analyzing: "AI анализдөөдө...",
+      stage1: "Талааларды текшерүү (3см сол, 1.5см оң)...",
+      stage2: "Структураны анализдөө (Титулдук бет, Мазмуну)...",
+      stage3: "Нумерацияны жөндөө (Рим цифралары → Киришүү, Араб цифралары → негизги бөлүм)...",
+      reportTitle: "Анализ аяктады",
+      reportTables: "12 таблица табылды, форматтоо оңдолду",
+      reportSpacing: "1.5 интервалга ылайык чегинүүлөр оңдолду",
+      reportReady: "Документ төлөмдөн кийин жүктөп алууга даяр",
+      fileRetention: "Файлдар 14 күн сакталып, андан кийин жок кылынат",
     },
     analysis: {
       title: "Анализдин натыйжасы",
@@ -211,6 +219,7 @@ export const translations: Record<Language, TranslationKeys> = {
       scanQr: "QR кодду MBank тиркемесинен сканерлеңиз",
       processing: "Төлөм текшерилүүдө...",
       success: "Төлөм ийгиликтүү!",
+      iPaid: "Мен төлөдүм ✓",
     },
     download: {
       title: "Жүктөп алуу",
