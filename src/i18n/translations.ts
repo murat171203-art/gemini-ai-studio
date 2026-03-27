@@ -105,6 +105,7 @@ type TranslationKeys = {
     scanQr: string;
     processing: string;
     success: string;
+    iPaid: string;
   };
   download: {
     title: string;
