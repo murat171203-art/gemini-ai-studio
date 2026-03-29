@@ -1,12 +1,53 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { FileText, FileDown, CheckCircle } from "lucide-react";
+import { useDocument } from "@/contexts/DocumentContext";
+import { FileText, FileDown, CheckCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Download = () => {
   const { t } = useLanguage();
-  const [format, setFormat] = useState<"docx" | "pdf">("docx");
+  const { repairedBlob, fileName, repairStats } = useDocument();
+  const [format] = useState<"docx">("docx");
+
+  const handleDownload = () => {
+    if (!repairedBlob) return;
+    const url = URL.createObjectURL(repairedBlob);
+    const a = document.createElement("a");
+    const baseName = fileName.replace(/\.docx$/i, "");
+    a.href = url;
+    a.download = `${baseName}_repaired.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  if (!repairedBlob) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
+        <motion.div
+          className="glass rounded-2xl p-8 w-full max-w-md text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Файл табылган жок</h2>
+          <p className="text-muted-foreground text-sm mb-6">
+            Алгач DOCX файлды жүктөп, оңдотуңуз
+          </p>
+          <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link to="/upload">{t.nav.upload}</Link>
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const totalFixes = repairStats
+    ? repairStats.fontFixes + repairStats.sizeFixes + repairStats.spacingFixes + repairStats.indentFixes + repairStats.tableFixes
+    : 0;
 
   return (
     <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
@@ -18,33 +59,49 @@ const Download = () => {
         <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-7 h-7 text-green-500" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">{t.payment.success}</h1>
-        <p className="text-muted-foreground mb-8">{t.download.thankYou}</p>
+        <h1 className="text-2xl font-bold mb-2">Оңдоо ийгиликтүү!</h1>
+        <p className="text-muted-foreground mb-4">{fileName}</p>
 
-        <h3 className="font-semibold mb-4">{t.download.selectFormat}</h3>
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button
-            onClick={() => setFormat("docx")}
-            className={`glass rounded-xl p-4 transition-all duration-200 ${
-              format === "docx" ? "neon-border neon-glow" : "border-border/30 hover:border-primary/30"
-            }`}
-          >
-            <FileText className={`w-8 h-8 mx-auto mb-2 ${format === "docx" ? "text-primary" : "text-muted-foreground"}`} />
-            <p className="text-sm font-medium">{t.download.word}</p>
-          </button>
-          <button
-            onClick={() => setFormat("pdf")}
-            className={`glass rounded-xl p-4 transition-all duration-200 ${
-              format === "pdf" ? "neon-border neon-glow" : "border-border/30 hover:border-primary/30"
-            }`}
-          >
-            <FileDown className={`w-8 h-8 mx-auto mb-2 ${format === "pdf" ? "text-primary" : "text-muted-foreground"}`} />
-            <p className="text-sm font-medium">{t.download.pdf}</p>
-          </button>
-        </div>
+        {repairStats && (
+          <div className="glass rounded-xl p-4 text-left text-sm space-y-1.5 mb-6">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Шрифт оңдоолор:</span>
+              <span className="font-medium">{repairStats.fontFixes + repairStats.sizeFixes}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Интервал оңдоолор:</span>
+              <span className="font-medium">{repairStats.spacingFixes}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Чегинүү оңдоолор:</span>
+              <span className="font-medium">{repairStats.indentFixes}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Таблица оңдоолор:</span>
+              <span className="font-medium">{repairStats.tableFixes}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t border-border/30">
+              <span className="font-semibold text-primary">Жалпы:</span>
+              <span className="font-bold text-primary">{totalFixes}</span>
+            </div>
+          </div>
+        )}
 
-        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 neon-glow">
-          {t.download.downloadBtn} ({format.toUpperCase()})
+        <Button
+          onClick={handleDownload}
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 neon-glow"
+          size="lg"
+        >
+          <FileDown className="w-5 h-5 mr-2" />
+          {t.download.downloadBtn} (DOCX)
+        </Button>
+
+        <Button
+          asChild
+          variant="ghost"
+          className="w-full mt-3 text-muted-foreground"
+        >
+          <Link to="/upload">Дагы бир файл жүктөө</Link>
         </Button>
       </motion.div>
     </div>
