@@ -1,53 +1,77 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle } from "lucide-react";
+import { useDocument } from "@/contexts/DocumentContext";
+import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { repairDocx } from "@/lib/docxRepair";
 
-type AnalysisStage = "idle" | "uploading" | "stage1" | "stage2" | "stage3" | "complete";
+type AnalysisStage = "idle" | "uploading" | "stage1" | "stage2" | "stage3" | "repairing" | "complete";
 
 const Upload = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { setOriginalFile, setRepairedResult, setProcessing, repairStats } = useDocument();
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<AnalysisStage>("idle");
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const stages: Record<string, { text: string; target: number }> = {
-    stage1: { text: t.upload.stage1 || "Проверка полей (3см слева, 1.5см справа)...", target: 33 },
-    stage2: { text: t.upload.stage2 || "Анализ структуры (Титульный лист, Содержание)...", target: 66 },
-    stage3: { text: t.upload.stage3 || "Настройка нумерации (Римские → Киришүү, Арабские → негизги бөлүм)...", target: 100 },
+    stage1: { text: t.upload.stage1 || "Проверка полей (3.5см слева, 2.5см справа)...", target: 25 },
+    stage2: { text: t.upload.stage2 || "Анализ структуры (Титульный лист, Содержание)...", target: 50 },
+    stage3: { text: t.upload.stage3 || "Настройка нумерации и форматирования...", target: 75 },
+    repairing: { text: "Документ оңдолууда / Repairing document...", target: 95 },
   };
 
   useEffect(() => {
     if (stage === "uploading") {
-      const timer = setTimeout(() => setStage("stage1"), 800);
+      const timer = setTimeout(() => setStage("stage1"), 500);
       return () => clearTimeout(timer);
     }
     if (stage === "stage1") {
-      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 33)), 80);
-      const timer = setTimeout(() => { setStage("stage2"); clearInterval(interval); }, 2500);
+      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 25)), 60);
+      const timer = setTimeout(() => { setStage("stage2"); clearInterval(interval); }, 1500);
       return () => { clearInterval(interval); clearTimeout(timer); };
     }
     if (stage === "stage2") {
-      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 66)), 80);
-      const timer = setTimeout(() => { setStage("stage3"); clearInterval(interval); }, 2500);
+      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 50)), 60);
+      const timer = setTimeout(() => { setStage("stage3"); clearInterval(interval); }, 1500);
       return () => { clearInterval(interval); clearTimeout(timer); };
     }
     if (stage === "stage3") {
-      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 100)), 80);
-      const timer = setTimeout(() => { setStage("complete"); clearInterval(interval); setProgress(100); }, 2500);
+      const interval = setInterval(() => setProgress(p => Math.min(p + 2, 75)), 60);
+      const timer = setTimeout(() => { setStage("repairing"); clearInterval(interval); }, 1500);
       return () => { clearInterval(interval); clearTimeout(timer); };
+    }
+    if (stage === "repairing" && file) {
+      // Actually repair the document
+      setProcessing(true);
+      repairDocx(file)
+        .then(({ blob, stats }) => {
+          setRepairedResult(blob, stats);
+          setProgress(100);
+          setStage("complete");
+        })
+        .catch((err) => {
+          console.error("Repair failed:", err);
+          setError(err.message || "Repair failed");
+          setStage("idle");
+          setProgress(0);
+        });
     }
   }, [stage]);
 
   const startAnalysis = useCallback(() => {
+    if (!file) return;
+    setOriginalFile(file);
+    setError(null);
     setStage("uploading");
     setProgress(0);
-  }, []);
+  }, [file, setOriginalFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -55,6 +79,8 @@ const Upload = () => {
     const dropped = e.dataTransfer.files[0];
     if (dropped?.name.endsWith(".docx")) {
       setFile(dropped);
+      setStage("idle");
+      setError(null);
     }
   }, []);
 
@@ -62,10 +88,15 @@ const Upload = () => {
     const selected = e.target.files?.[0];
     if (selected?.name.endsWith(".docx")) {
       setFile(selected);
+      setStage("idle");
+      setError(null);
     }
   }, []);
 
   const currentStageText = stage in stages ? stages[stage].text : "";
+  const totalFixes = repairStats
+    ? repairStats.fontFixes + repairStats.sizeFixes + repairStats.spacingFixes + repairStats.indentFixes + repairStats.tableFixes
+    : 0;
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -78,6 +109,16 @@ const Upload = () => {
           {t.upload.title}
         </motion.h1>
 
+        {error && (
+          <motion.div
+            className="glass rounded-xl p-4 mb-4 border-destructive/50 text-destructive text-sm text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {error}
+          </motion.div>
+        )}
+
         <motion.div
           className={`glass rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
             isDragging ? "neon-border neon-glow" : "border-border/50 hover:border-primary/30"
@@ -89,7 +130,7 @@ const Upload = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
         >
-          {stage === "complete" ? (
+          {stage === "complete" && repairStats ? (
             <div className="flex flex-col items-center gap-4">
               <div className="w-16 h-16 rounded-xl bg-green-500/20 flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-green-400" />
@@ -98,35 +139,62 @@ const Upload = () => {
               <div className="glass rounded-xl p-4 text-left w-full space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>{t.upload.reportTables || "12 таблица табылды, форматтоо оңдолду"}</span>
+                  <span>
+                    {repairStats.fontFixes + repairStats.sizeFixes} шрифт оңдоосу / font fixes
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>{t.upload.reportSpacing || "1.5 интервалга ылайык чегинүүлөр оңдолду"}</span>
+                  <span>
+                    {repairStats.spacingFixes} интервал оңдоосу / spacing fixes
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <span>{t.upload.reportReady || "Документ төлөмдөн кийин жүктөп алууга даяр"}</span>
+                  <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span>
+                    {repairStats.indentFixes} чегинүү оңдоосу / indent fixes
+                  </span>
+                </div>
+                {repairStats.tableFixes > 0 && (
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>
+                      {repairStats.tableFixes} таблица оңдоосу / table fixes
+                    </span>
+                  </div>
+                )}
+                {repairStats.marginFixed && (
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <span>Барак талаалары оңдолду / Page margins fixed</span>
+                  </div>
+                )}
+                <div className="flex items-start gap-2 pt-2 border-t border-border/30">
+                  <AlertTriangle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <span className="font-medium text-primary">
+                    Жалпы: {totalFixes} оңдоо / Total: {totalFixes} fixes
+                  </span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t.upload.fileRetention || "Файлдар 14 күн сакталып, андан кийин жок кылынат"}
-              </p>
-              <Button 
+              <Button
                 className="bg-primary text-primary-foreground hover:bg-primary/90 neon-glow mt-2 w-full"
-                onClick={() => navigate("/payment")}
+                onClick={() => navigate("/download")}
               >
-                {t.analysis.payToContinue}
+                Жүктөп алуу / Download
               </Button>
             </div>
           ) : stage !== "idle" ? (
             <div className="flex flex-col items-center gap-5">
               <div className="w-16 h-16 rounded-xl bg-primary/20 neon-border flex items-center justify-center">
-                <FileText className="w-8 h-8 text-primary animate-pulse" />
+                {stage === "repairing" ? (
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                ) : (
+                  <FileText className="w-8 h-8 text-primary animate-pulse" />
+                )}
               </div>
               <div className="w-full">
                 <Progress value={progress} className="h-3 mb-3" />
-                <motion.p 
+                <motion.p
                   className="text-sm text-primary font-medium"
                   key={stage}
                   initial={{ opacity: 0, y: 5 }}
@@ -152,7 +220,7 @@ const Upload = () => {
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
-              <Button 
+              <Button
                 className="bg-primary text-primary-foreground hover:bg-primary/90 neon-glow mt-4"
                 onClick={startAnalysis}
               >
