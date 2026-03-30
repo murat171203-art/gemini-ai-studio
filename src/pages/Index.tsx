@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
-import { Upload, Brain, CreditCard, Download, Sparkles, Zap, Shield, FileStack, ChevronDown, MapPin, Clock, Phone, ExternalLink } from "lucide-react";
+import { Upload, Brain, CreditCard, Download, Sparkles, Zap, Shield, FileStack, ChevronDown, MapPin, Clock, Phone, ExternalLink, MessageCircle } from "lucide-react";
+import WeatherCurrency from "@/components/WeatherCurrency";
+import OKeyBanner from "@/components/OKeyBanner";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
