@@ -176,41 +176,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-24">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <motion.h2
-            className="text-3xl md:text-4xl font-bold text-center mb-16"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            {t.faq.title}
-          </motion.h2>
-
-          <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeUp}
-                custom={i}
-              >
-                <AccordionItem value={`faq-${i}`} className="glass rounded-xl border-border/30 px-4">
-                  <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground text-sm">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              </motion.div>
-            ))}
-          </Accordion>
-        </div>
-      </section>
 
 
       {/* Branches */}
