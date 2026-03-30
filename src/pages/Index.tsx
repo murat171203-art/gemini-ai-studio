@@ -102,6 +102,13 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Info Widgets: Weather, Time, Currency */}
+      <section className="py-12 relative z-10">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <WeatherCurrency />
+        </div>
+      </section>
+
       {/* Steps */}
       <section id="steps" className="py-24 relative">
         <div className="container mx-auto px-4">
