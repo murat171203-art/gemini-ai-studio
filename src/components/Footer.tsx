@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { FileText, MapPin, Clock, Phone, ExternalLink } from "lucide-react";
+import { FileText, MapPin, Clock, MessageCircle, ExternalLink } from "lucide-react";
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -28,8 +28,13 @@ const Footer = () => {
                   <span>{branch.hours}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                  <a href={`tel:${branch.phone.replace(/\s/g, "")}`} className="hover:text-primary transition-colors">
+                  <MessageCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <a
+                    href={`https://wa.me/${branch.phone.replace(/[\s+]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-green-500 transition-colors"
+                  >
                     {branch.phone}
                   </a>
                 </div>
