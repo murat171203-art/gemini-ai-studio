@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { FileText, MapPin, Clock, Phone, ExternalLink } from "lucide-react";
+import { FileText, MapPin, Clock, MessageCircle, ExternalLink } from "lucide-react";
 
 const Footer = () => {
   const { t } = useLanguage();
