@@ -271,6 +271,16 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Info Widgets: Weather, Time, Currency + O-Key Banner */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WeatherCurrency />
+            <OKeyBanner />
+          </div>
+        </div>
+      </section>
+
       <section className="py-24">
         <div className="container mx-auto px-4 text-center">
           <motion.div
