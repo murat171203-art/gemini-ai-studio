@@ -102,6 +102,13 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Info Widgets: Weather, Time, Currency */}
+      <section className="py-12 relative z-10">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <WeatherCurrency />
+        </div>
+      </section>
+
       {/* Steps */}
       <section id="steps" className="py-24 relative">
         <div className="container mx-auto px-4">
@@ -236,13 +243,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Info Widgets: Weather, Time, Currency + O-Key Banner */}
+      {/* O-Key Banner */}
       <section className="py-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WeatherCurrency />
-            <OKeyBanner />
-          </div>
+          <OKeyBanner />
         </div>
       </section>
 
