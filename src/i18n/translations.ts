@@ -248,7 +248,7 @@ export const translations: Record<Language, TranslationKeys> = {
       branchList: [
         { name: "Джал", address: "Джал 30-43а, Бишкек", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
         { name: "Филармония", address: "Чүй проспектиси, 251, Бишкек", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
-        { name: "Комок", address: "Жаманбаев к., 35а/1, Бишкек", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+        
       ],
     },
   },
@@ -364,7 +364,7 @@ export const translations: Record<Language, TranslationKeys> = {
       branchList: [
         { name: "Jal", address: "Jal 30-43a, Bişkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
         { name: "Filarmoni", address: "Çüy Cad., 251, Bişkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
-        { name: "Komok", address: "Camanbaev Sk., 35a/1, Bişkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+        
       ],
     },
   },
@@ -480,7 +480,7 @@ export const translations: Record<Language, TranslationKeys> = {
       branchList: [
         { name: "Джал", address: "Джал 30-43а, Бишкек", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
         { name: "Филармония", address: "пр. Чуй, 251, Бишкек", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
-        { name: "Комок", address: "ул. Джаманбаева, 35а/1, Бишкек", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+        
       ],
     },
   },
@@ -596,7 +596,7 @@ export const translations: Record<Language, TranslationKeys> = {
       branchList: [
         { name: "Jal", address: "Jal 30-43a, Bishkek", hours: "7:00 — 20:00", phone: "+996 555 566 667", mapLink: "https://go.2gis.com/6TVm2" },
         { name: "Philharmonic", address: "Chuy Ave, 251, Bishkek", hours: "9:30 — 18:00", phone: "+996 706 614 013", mapLink: "https://go.2gis.com/vYXqB" },
-        { name: "Komok", address: "Jamanbaev St, 35a/1, Bishkek", hours: "8:00 — 21:00", phone: "+996 706 229 979", mapLink: "https://go.2gis.com/VVzIv" },
+        
       ],
     },
   },
