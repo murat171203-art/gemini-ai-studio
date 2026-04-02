@@ -8,9 +8,12 @@ export interface RepairStats {
   tableFixes: number;
   marginFixed: boolean;
   pageNumberFixed: boolean;
+  sectionBreaksAdded: number;
+  tocGenerated: boolean;
+  tableFigureRenumbered: number;
 }
 
-// DXA units: 1cm = 567 DXA, 1inch = 1440 DXA
+// DXA units: 1cm = 567 DXA
 const MARGINS = {
   left: 1985,   // 3.5cm
   top: 1701,    // 3.0cm
@@ -20,12 +23,434 @@ const MARGINS = {
 
 const FONT_NAME = "Times New Roman";
 const FONT_SIZE = 24; // half-points (12pt = 24)
-const LINE_SPACING = 360; // 1.5 line spacing (240 = 1.0)
+const LINE_SPACING = 360; // 1.5 line spacing
 const TABLE_LINE_SPACING = 240; // 1.0 for tables
 const FIRST_LINE_INDENT = 709; // 1.25cm
 
+// Section detection keywords (multi-language support)
+const PREFACE_KEYWORDS = ["Өн сөз", "Предисловие", "Önsöz", "Preface"];
+const ABSTRACT_KEYWORDS = ["Өзет", "Аннотация", "Özet", "Abstract"];
+const INTRO_KEYWORDS = ["Киришүү", "Введение", "Giriş", "Introduction"];
+const CHAPTER_KEYWORDS = ["Бөлүм", "Глава", "Bölüm", "Chapter"];
+
+// ============================================================
+// ALGORITHM 1: SECTION BREAKS & PAGE NUMBERING
+// ============================================================
+// Section 1: Title pages — no page numbers
+// Section 2: From "Preface" to before "Abstract" — Roman numerals (ii, iii...)
+// Section 3: From "Abstract" to end — Arabic numerals, continuing count
+
+interface SectionInfo {
+  prefaceParaIndex: number;
+  abstractParaIndex: number;
+}
+
+function findSectionBoundaries(xml: string): SectionInfo {
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  let prefaceIdx = -1;
+  let abstractIdx = -1;
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const text = extractText(paragraphs[i]).trim();
+    if (prefaceIdx === -1 && PREFACE_KEYWORDS.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      prefaceIdx = i;
+    }
+    if (abstractIdx === -1 && ABSTRACT_KEYWORDS.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      abstractIdx = i;
+    }
+  }
+
+  return { prefaceParaIndex: prefaceIdx, abstractParaIndex: abstractIdx };
+}
+
+function extractText(paragraphXml: string): string {
+  const textMatches = paragraphXml.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
+  return textMatches.map(m => {
+    const inner = m.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/);
+    return inner ? inner[1] : "";
+  }).join("");
+}
+
+function buildSectPr(options: {
+  margins: typeof MARGINS;
+  pageNumbering?: { fmt: string; start: number };
+  hidePageNumber?: boolean;
+}): string {
+  const { margins, pageNumbering, hidePageNumber } = options;
+  
+  let pgNumFmt = "";
+  if (pageNumbering) {
+    pgNumFmt = `<w:pgNumType w:fmt="${pageNumbering.fmt}" w:start="${pageNumbering.start}"/>`;
+  }
+
+  // Footer reference for page numbers
+  let footerRef = "";
+  if (!hidePageNumber && pageNumbering) {
+    footerRef = `<w:footerReference w:type="default" r:id="rIdFooterRepair"/>`;
+  }
+
+  return `<w:sectPr>${footerRef}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${margins.top}" w:right="${margins.right}" w:bottom="${margins.bottom}" w:left="${margins.left}" w:header="720" w:footer="720" w:gutter="0"/>${pgNumFmt}<w:cols w:space="720"/></w:sectPr>`;
+}
+
+function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: string; count: number } {
+  if (boundaries.prefaceParaIndex === -1 && boundaries.abstractParaIndex === -1) {
+    return { xml, count: 0 };
+  }
+
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  let count = 0;
+  const bodyStartMatch = xml.match(/<w:body>/);
+  const bodyEndMatch = xml.match(/<\/w:body>/);
+  if (!bodyStartMatch || !bodyEndMatch) return { xml, count: 0 };
+
+  // Remove existing sectPr from all paragraphs (inline section breaks)
+  // We'll re-add them at the right places
+  const cleanedParagraphs = paragraphs.map(p => {
+    return p.replace(/<w:sectPr>[\s\S]*?<\/w:sectPr>/g, "");
+  });
+
+  // Extract final sectPr (document-level)
+  const finalSectPrMatch = xml.match(/<w:sectPr[^>]*>[\s\S]*?<\/w:sectPr>\s*<\/w:body>/);
+  let finalSectPr = "";
+  if (finalSectPrMatch) {
+    finalSectPr = finalSectPrMatch[0].replace("</w:body>", "");
+  }
+
+  // Build new paragraph array with section breaks inserted
+  const newParagraphs: string[] = [];
+
+  for (let i = 0; i < cleanedParagraphs.length; i++) {
+    // Before preface paragraph: insert section break for Section 1 (title pages, no numbers)
+    if (i === boundaries.prefaceParaIndex && boundaries.prefaceParaIndex > 0) {
+      // End Section 1 (no page numbers) by adding sectPr to previous paragraph
+      const prevIdx = newParagraphs.length - 1;
+      if (prevIdx >= 0) {
+        const sect1 = buildSectPr({ margins: MARGINS, hidePageNumber: true });
+        // Insert sectPr inside the last <w:pPr> of previous paragraph, or append before </w:p>
+        newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect1);
+        count++;
+      }
+    }
+
+    // Before abstract paragraph: insert section break for Section 2 (Roman numerals)
+    if (i === boundaries.abstractParaIndex && boundaries.abstractParaIndex > 0) {
+      const prevIdx = newParagraphs.length - 1;
+      if (prevIdx >= 0) {
+        // Section 2 ends here — Roman numerals starting from page after title pages
+        // If preface is page 5 (after 4 title pages), start roman at "ii" 
+        // because the first page of preface is the second page of section 2
+        const sect2 = buildSectPr({ 
+          margins: MARGINS, 
+          pageNumbering: { fmt: "lowerRoman", start: 1 } 
+        });
+        newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect2);
+        count++;
+      }
+    }
+
+    newParagraphs.push(cleanedParagraphs[i]);
+  }
+
+  // Update final sectPr for Section 3 (Arabic numerals, continuing)
+  // Calculate approximate starting page for Arabic section
+  let updatedFinalSectPr = finalSectPr;
+  if (boundaries.abstractParaIndex > 0) {
+    // Remove existing pgNumType from final sectPr and add Arabic continuing
+    updatedFinalSectPr = updatedFinalSectPr.replace(/<w:pgNumType[^/]*\/>/g, "");
+    // Insert Arabic page numbering — we use start="1" as a base, but the intent is continuous
+    // The actual page number depends on the physical page count of previous sections
+    const pgNumType = `<w:pgNumType w:fmt="decimal"/>`;
+    updatedFinalSectPr = updatedFinalSectPr.replace(/<w:pgMar/, pgNumType + "<w:pgMar");
+    
+    // Ensure margins are correct in final sectPr
+    updatedFinalSectPr = updatedFinalSectPr
+      .replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`)
+      .replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`)
+      .replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`)
+      .replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
+    count++;
+  }
+
+  // Reconstruct body
+  const beforeBody = xml.substring(0, bodyStartMatch.index! + "<w:body>".length);
+  const afterBody = "</w:body>" + xml.substring(xml.indexOf("</w:body>") + "</w:body>".length);
+
+  // Get non-paragraph content between body tags (like bookmarkStart etc.)
+  const bodyContent = xml.substring(bodyStartMatch.index! + "<w:body>".length, xml.indexOf("</w:body>"));
+  
+  // Extract non-paragraph elements that might exist
+  const nonParaContent = bodyContent.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, "").replace(/<w:sectPr[^>]*>[\s\S]*?<\/w:sectPr>/g, "").trim();
+
+  const newBody = newParagraphs.join("\n") + "\n" + updatedFinalSectPr;
+  const result = beforeBody + (nonParaContent ? nonParaContent + "\n" : "") + newBody + "\n" + afterBody;
+
+  return { xml: result, count };
+}
+
+function insertSectPrIntoParagraph(paraXml: string, sectPr: string): string {
+  // Insert sectPr inside pPr if it exists, otherwise create pPr
+  if (paraXml.includes("<w:pPr>")) {
+    return paraXml.replace("</w:pPr>", sectPr + "</w:pPr>");
+  } else if (paraXml.includes("<w:pPr")) {
+    // Self-closing pPr or pPr with attributes
+    return paraXml.replace(/<w:pPr([^>]*)\/>/,  `<w:pPr$1>${sectPr}</w:pPr>`);
+  } else {
+    // No pPr exists, add one
+    return paraXml.replace(/<w:p([ >])/, `<w:p$1<w:pPr>${sectPr}</w:pPr>`);
+  }
+}
+
+// ============================================================
+// ALGORITHM 2: TOC GENERATION WITH DOTTED LEADERS
+// ============================================================
+
+interface TocEntry {
+  text: string;
+  level: number;
+  pageRef: string;
+}
+
+function findHeadings(xml: string): TocEntry[] {
+  const entries: TocEntry[] = [];
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  
+  for (const para of paragraphs) {
+    // Check for heading style
+    const styleMatch = para.match(/<w:pStyle w:val="([^"]*)"\s*\/>/);
+    if (!styleMatch) continue;
+    
+    const style = styleMatch[1];
+    let level = -1;
+    
+    if (/^Heading1$|^1$/i.test(style)) level = 1;
+    else if (/^Heading2$|^2$/i.test(style)) level = 2;
+    else if (/^Heading3$|^3$/i.test(style)) level = 3;
+    else if (/^heading\s*1$/i.test(style)) level = 1;
+    else if (/^heading\s*2$/i.test(style)) level = 2;
+    else if (/^heading\s*3$/i.test(style)) level = 3;
+    
+    if (level > 0) {
+      const text = extractText(para).trim();
+      if (text) {
+        entries.push({ text, level, pageRef: "" });
+      }
+    }
+  }
+  
+  return entries;
+}
+
+function generateTocXml(entries: TocEntry[]): string {
+  if (entries.length === 0) return "";
+  
+  const tocParagraphs = entries.map(entry => {
+    const indent = (entry.level - 1) * 567; // Indent sub-levels
+    const bold = entry.level === 1 ? `<w:b/><w:bCs/>` : "";
+    
+    // TOC entry with dot leader tab stop
+    return `<w:p>
+      <w:pPr>
+        <w:pStyle w:val="TOC${entry.level}"/>
+        <w:tabs>
+          <w:tab w:val="right" w:leader="dot" w:pos="9072"/>
+        </w:tabs>
+        ${indent > 0 ? `<w:ind w:left="${indent}"/>` : ""}
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+          ${bold}
+          <w:noProof/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+          ${bold}
+        </w:rPr>
+        <w:t xml:space="preserve">${escapeXml(entry.text)}</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:tab/>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:fldChar w:fldCharType="begin"/>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:instrText xml:space="preserve"> PAGEREF _Toc${Math.random().toString(36).substring(2, 10)} \\h </w:instrText>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:fldChar w:fldCharType="separate"/>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:t>0</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+          <w:sz w:val="${FONT_SIZE}"/>
+          <w:szCs w:val="${FONT_SIZE}"/>
+        </w:rPr>
+        <w:fldChar w:fldCharType="end"/>
+      </w:r>
+    </w:p>`;
+  });
+
+  // TOC title
+  const tocTitle = `<w:p>
+    <w:pPr>
+      <w:jc w:val="center"/>
+      <w:spacing w:after="240"/>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="28"/>
+        <w:szCs w:val="28"/>
+        <w:b/>
+        <w:bCs/>
+      </w:rPr>
+    </w:pPr>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="28"/>
+        <w:szCs w:val="28"/>
+        <w:b/>
+        <w:bCs/>
+      </w:rPr>
+      <w:t>МАЗМУНУ</w:t>
+    </w:r>
+  </w:p>`;
+
+  return tocTitle + "\n" + tocParagraphs.join("\n");
+}
+
+// ============================================================
+// ALGORITHM 3: TABLE & FIGURE RENUMBERING BY CHAPTER
+// ============================================================
+
+function renumberTablesAndFigures(xml: string): { xml: string; count: number } {
+  let count = 0;
+  let currentChapter = 0;
+  let tableCountInChapter = 0;
+  let figureCountInChapter = 0;
+
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  const processedParagraphs: string[] = [];
+
+  for (const para of paragraphs) {
+    const text = extractText(para).trim();
+    let modifiedPara = para;
+
+    // Detect chapter headings (e.g., "1-Бөлүм", "Глава 1", "Bölüm 1", "Chapter 1")
+    const chapterMatch = text.match(/^(\d+)[\s.\-]*(?:Бөлүм|Глава|Bölüm|Chapter)/i) ||
+                          text.match(/(?:Бөлүм|Глава|Bölüm|Chapter)\s*(\d+)/i);
+    if (chapterMatch) {
+      currentChapter = parseInt(chapterMatch[1]);
+      tableCountInChapter = 0;
+      figureCountInChapter = 0;
+    }
+
+    // Renumber tables: "Таблица X" -> "Таблица chapter.N"
+    const tablePatterns = [
+      /Таблица\s+\d+[\.\d]*/g,
+      /Tablo\s+\d+[\.\d]*/g,
+      /Table\s+\d+[\.\d]*/g,
+      /Таблица\s+\d+[\.\d]*/g,
+    ];
+
+    for (const pattern of tablePatterns) {
+      if (pattern.test(text) && currentChapter > 0) {
+        tableCountInChapter++;
+        const label = text.match(pattern)?.[0]?.split(/\s+/)[0] || "Таблица";
+        // Replace in the XML text nodes
+        modifiedPara = modifiedPara.replace(
+          new RegExp(`(${label})\\s+\\d+[\\.]?\\d*`, "g"),
+          `$1 ${currentChapter}.${tableCountInChapter}`
+        );
+        count++;
+        pattern.lastIndex = 0; // Reset regex
+      }
+      pattern.lastIndex = 0;
+    }
+
+    // Renumber figures: "Сүрөт X" -> "Сүрөт chapter.N"
+    const figurePatterns = [
+      /Сүрөт\s+\d+[\.\d]*/g,
+      /Şekil\s+\d+[\.\d]*/g,
+      /Figure\s+\d+[\.\d]*/g,
+      /Рисунок\s+\d+[\.\d]*/g,
+    ];
+
+    for (const pattern of figurePatterns) {
+      if (pattern.test(text) && currentChapter > 0) {
+        figureCountInChapter++;
+        const label = text.match(pattern)?.[0]?.split(/\s+/)[0] || "Сүрөт";
+        modifiedPara = modifiedPara.replace(
+          new RegExp(`(${label})\\s+\\d+[\\.]?\\d*`, "g"),
+          `$1 ${currentChapter}.${figureCountInChapter}`
+        );
+        count++;
+        pattern.lastIndex = 0;
+      }
+      pattern.lastIndex = 0;
+    }
+
+    processedParagraphs.push(modifiedPara);
+  }
+
+  // Reconstruct XML
+  let result = xml;
+  const originalParagraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  for (let i = 0; i < originalParagraphs.length; i++) {
+    if (originalParagraphs[i] !== processedParagraphs[i]) {
+      result = result.replace(originalParagraphs[i], processedParagraphs[i]);
+    }
+  }
+
+  return { xml: result, count };
+}
+
+// ============================================================
+// EXISTING REPAIR FUNCTIONS (margins, fonts, spacing, etc.)
+// ============================================================
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function fixMargins(xml: string): { xml: string; fixed: boolean } {
-  // Fix page margins in sectPr
   const sectPrRegex = /<w:pgMar[^/]*\/>/g;
   let fixed = false;
   
@@ -36,7 +461,6 @@ function fixMargins(xml: string): { xml: string; fixed: boolean } {
     result = result.replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`);
     result = result.replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`);
     result = result.replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
-    // If attributes don't exist, they won't be replaced — handle that
     if (!result.includes('w:left=')) result = result.replace('w:pgMar', `w:pgMar w:left="${MARGINS.left}"`);
     if (!result.includes('w:top=')) result = result.replace('w:pgMar', `w:pgMar w:top="${MARGINS.top}"`);
     if (!result.includes('w:right=')) result = result.replace('w:pgMar', `w:pgMar w:right="${MARGINS.right}"`);
@@ -50,7 +474,6 @@ function fixMargins(xml: string): { xml: string; fixed: boolean } {
 function fixFonts(xml: string): { xml: string; count: number } {
   let count = 0;
   
-  // Fix rFonts (font family)
   const newXml = xml.replace(/<w:rFonts[^/]*\/>/g, (match) => {
     const hasAscii = match.includes('w:ascii=');
     if (hasAscii) {
@@ -93,7 +516,6 @@ function fixFontSize(xml: string): { xml: string; count: number } {
 function fixSpacing(xml: string): { xml: string; count: number } {
   let count = 0;
   
-  // Fix line spacing for body paragraphs (not inside tables)
   const newXml = xml.replace(/<w:spacing[^/]*\/>/g, (match) => {
     if (match.includes('w:line=')) {
       const currentLine = match.match(/w:line="([^"]*)"/)?.[1];
@@ -111,7 +533,6 @@ function fixSpacing(xml: string): { xml: string; count: number } {
 function fixIndents(xml: string): { xml: string; count: number } {
   let count = 0;
   
-  // Fix first line indents for body paragraphs
   const newXml = xml.replace(/<w:ind([^/]*)\/>/g, (match, attrs) => {
     if (attrs.includes('w:firstLine=')) {
       const currentIndent = match.match(/w:firstLine="([^"]*)"/)?.[1];
@@ -129,7 +550,6 @@ function fixIndents(xml: string): { xml: string; count: number } {
 function fixTableSpacing(xml: string): { xml: string; count: number } {
   let count = 0;
   
-  // Find all table content and fix spacing to 1.0
   const tableRegex = /<w:tbl>([\s\S]*?)<\/w:tbl>/g;
   const newXml = xml.replace(tableRegex, (tableMatch) => {
     return tableMatch.replace(/<w:spacing[^/]*\/>/g, (spacingMatch) => {
@@ -144,7 +564,6 @@ function fixTableSpacing(xml: string): { xml: string; count: number } {
     });
   });
   
-  // Also add cantSplit to table rows
   const withCantSplit = newXml.replace(/<w:trPr>([\s\S]*?)<\/w:trPr>/g, (match, inner) => {
     if (!inner.includes('w:cantSplit')) {
       count++;
@@ -156,17 +575,114 @@ function fixTableSpacing(xml: string): { xml: string; count: number } {
   return { xml: withCantSplit, count };
 }
 
-function addPageNumbers(xml: string): { xml: string; fixed: boolean } {
-  let fixed = false;
+// Ensure footer XML exists for page numbering
+function ensureFooterFile(zip: JSZip): string {
+  const footerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+       xmlns:o="urn:schemas-microsoft-com:office:office"
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+       xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+       xmlns:v="urn:schemas-microsoft-com:vml"
+       xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+       xmlns:w10="urn:schemas-microsoft-com:office:word"
+       xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+       xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml">
+  <w:p>
+    <w:pPr>
+      <w:pStyle w:val="Footer"/>
+      <w:jc w:val="right"/>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+    </w:pPr>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+      <w:fldChar w:fldCharType="begin"/>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+      <w:instrText xml:space="preserve"> PAGE </w:instrText>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+      <w:fldChar w:fldCharType="separate"/>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+      <w:t>1</w:t>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/>
+        <w:sz w:val="${FONT_SIZE}"/>
+        <w:szCs w:val="${FONT_SIZE}"/>
+      </w:rPr>
+      <w:fldChar w:fldCharType="end"/>
+    </w:r>
+  </w:p>
+</w:ftr>`;
   
-  // Check if footer reference exists in sectPr
-  if (!xml.includes('w:footerReference') || !xml.includes('PAGE')) {
-    // Add page number field to the last sectPr's footer
-    fixed = true;
-  }
+  zip.file("word/footer_repair.xml", footerXml);
   
-  return { xml, fixed };
+  // Add relationship for the footer
+  const relsPath = "word/_rels/document.xml.rels";
+  const relsFile = zip.file(relsPath);
+  
+  return footerXml;
 }
+
+async function addFooterRelationship(zip: JSZip): Promise<void> {
+  const relsPath = "word/_rels/document.xml.rels";
+  const relsFile = zip.file(relsPath);
+  
+  if (relsFile) {
+    let relsXml = await relsFile.async("string");
+    
+    if (!relsXml.includes("rIdFooterRepair")) {
+      relsXml = relsXml.replace(
+        "</Relationships>",
+        `<Relationship Id="rIdFooterRepair" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer_repair.xml"/></Relationships>`
+      );
+      zip.file(relsPath, relsXml);
+    }
+  }
+
+  // Add content type for footer if missing
+  const contentTypesFile = zip.file("[Content_Types].xml");
+  if (contentTypesFile) {
+    let ctXml = await contentTypesFile.async("string");
+    if (!ctXml.includes("footer_repair.xml")) {
+      ctXml = ctXml.replace(
+        "</Types>",
+        `<Override PartName="/word/footer_repair.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`
+      );
+      zip.file("[Content_Types].xml", ctXml);
+    }
+  }
+}
+
+// ============================================================
+// MAIN REPAIR FUNCTION
+// ============================================================
 
 export async function repairDocx(file: File): Promise<{ blob: Blob; stats: RepairStats }> {
   const arrayBuffer = await file.arrayBuffer();
@@ -180,9 +696,11 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
     tableFixes: 0,
     marginFixed: false,
     pageNumberFixed: false,
+    sectionBreaksAdded: 0,
+    tocGenerated: false,
+    tableFigureRenumbered: 0,
   };
   
-  // Get document.xml
   const docXmlFile = zip.file("word/document.xml");
   if (!docXmlFile) {
     throw new Error("Invalid DOCX file: document.xml not found");
@@ -190,36 +708,55 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   
   let docXml = await docXmlFile.async("string");
   
-  // Apply all fixes
+  // 1. Fix margins
   const marginResult = fixMargins(docXml);
   docXml = marginResult.xml;
   stats.marginFixed = marginResult.fixed;
   
+  // 2. Fix fonts
   const fontResult = fixFonts(docXml);
   docXml = fontResult.xml;
   stats.fontFixes = fontResult.count;
   
+  // 3. Fix font sizes
   const sizeResult = fixFontSize(docXml);
   docXml = sizeResult.xml;
   stats.sizeFixes = sizeResult.count;
   
+  // 4. Fix table spacing
   const tableResult = fixTableSpacing(docXml);
   docXml = tableResult.xml;
   stats.tableFixes = tableResult.count;
   
+  // 5. Fix body spacing
   const spacingResult = fixSpacing(docXml);
   docXml = spacingResult.xml;
   stats.spacingFixes = spacingResult.count;
   
+  // 6. Fix indents
   const indentResult = fixIndents(docXml);
   docXml = indentResult.xml;
   stats.indentFixes = indentResult.count;
   
-  const pageResult = addPageNumbers(docXml);
-  docXml = pageResult.xml;
-  stats.pageNumberFixed = pageResult.fixed;
+  // 7. ALGORITHM 1: Section breaks & page numbering
+  const boundaries = findSectionBoundaries(docXml);
+  const sectionResult = insertSectionBreaks(docXml, boundaries);
+  docXml = sectionResult.xml;
+  stats.sectionBreaksAdded = sectionResult.count;
+  stats.pageNumberFixed = sectionResult.count > 0;
   
-  // Also fix styles.xml if it exists
+  // 8. ALGORITHM 3: Table & figure renumbering
+  const renumberResult = renumberTablesAndFigures(docXml);
+  docXml = renumberResult.xml;
+  stats.tableFigureRenumbered = renumberResult.count;
+  
+  // Setup footer file for page numbering
+  if (stats.sectionBreaksAdded > 0) {
+    ensureFooterFile(zip);
+    await addFooterRelationship(zip);
+  }
+  
+  // Fix styles.xml too
   const stylesFile = zip.file("word/styles.xml");
   if (stylesFile) {
     let stylesXml = await stylesFile.async("string");
@@ -238,7 +775,7 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   // Save modified document.xml
   zip.file("word/document.xml", docXml);
   
-  // Generate the repaired DOCX
+  // Generate repaired DOCX
   const blob = await zip.generateAsync({
     type: "blob",
     mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
