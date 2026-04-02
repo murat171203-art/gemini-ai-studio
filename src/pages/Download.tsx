@@ -1,27 +1,49 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
-import { FileText, FileDown, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, CheckCircle, AlertCircle, FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { convertDocxBlobToPdf } from "@/lib/docxToPdf";
 
 const Download = () => {
   const { t } = useLanguage();
   const { repairedBlob, fileName, repairStats } = useDocument();
-  const [format] = useState<"docx">("docx");
+  const [isConverting, setIsConverting] = useState(false);
 
-  const handleDownload = () => {
+  const baseName = fileName.replace(/\.docx$/i, "");
+
+  const handleDownloadDocx = () => {
     if (!repairedBlob) return;
     const url = URL.createObjectURL(repairedBlob);
     const a = document.createElement("a");
-    const baseName = fileName.replace(/\.docx$/i, "");
     a.href = url;
     a.download = `${baseName}_repaired.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!repairedBlob) return;
+    setIsConverting(true);
+    try {
+      const pdfBlob = await convertDocxBlobToPdf({ blob: repairedBlob, fileName });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${baseName}_repaired.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF conversion error:", err);
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   if (!repairedBlob) {
@@ -87,14 +109,30 @@ const Download = () => {
           </div>
         )}
 
-        <Button
-          onClick={handleDownload}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 neon-glow"
-          size="lg"
-        >
-          <FileDown className="w-5 h-5 mr-2" />
-          {t.download.downloadBtn} (DOCX)
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={handleDownloadDocx}
+            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 neon-glow"
+            size="lg"
+          >
+            <FileDown className="w-5 h-5 mr-2" />
+            DOCX
+          </Button>
+
+          <Button
+            onClick={handleDownloadPdf}
+            disabled={isConverting}
+            className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+            size="lg"
+          >
+            {isConverting ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <FileText className="w-5 h-5 mr-2" />
+            )}
+            PDF
+          </Button>
+        </div>
 
         <Button
           asChild
