@@ -303,7 +303,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "Ne kadar sürer?",
       a3: "AI analizi 2-5 dakika içinde tamamlanır. Ödeme sonrasında dosyayı hemen indirebilirsiniz.",
       q4: "Dosyalarım güvende mi?",
-      a4: "Tüm dosyalar şifreli sunucularda saklanır ve 30 gün sonra otomatik olarak silinir.",
+      a4: "Tüm dosyalar şifreli sunucularda saklanır ve 14 gün sonra otomatik olarak silinir.",
+      q5: "Dosyaları saklamak için sunucuda yeterli alan yok mu?",
+      a5: "Hizmet tamamlandıktan ve dosyayı indirdikten sonra dosyalar sunucumuzdan hemen silinir. Sunucuda hiçbir dosya saklanmaz.",
     },
     upload: {
       title: "Tez Yükleme",
