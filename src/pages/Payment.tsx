@@ -52,7 +52,7 @@ const Payment = () => {
 
             <h1 className="text-2xl font-bold mb-2">{t.payment.title}</h1>
             <p className="text-muted-foreground mb-6">
-              {t.payment.amount}: <span className="text-foreground font-bold text-xl">250 сом</span>
+              {t.payment.amount}: <span className="text-foreground font-bold text-xl">500 сом</span>
             </p>
 
             {/* QR Code */}
