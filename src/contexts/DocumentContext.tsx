@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import type { RepairStats } from "@/lib/docxRepair";
 
+export type University = "ktmu" | "bmu" | "knu" | "ktu";
+
 interface DocumentState {
   originalFile: File | null;
   repairedBlob: Blob | null;
   repairStats: RepairStats | null;
   isProcessing: boolean;
   fileName: string;
+  university: University | null;
 }
 
 interface DocumentContextType extends DocumentState {
