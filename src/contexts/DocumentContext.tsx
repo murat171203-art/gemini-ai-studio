@@ -26,6 +26,7 @@ const initialState: DocumentState = {
   repairStats: null,
   isProcessing: false,
   fileName: "",
+  university: null,
 };
 
 const DocumentContext = createContext<DocumentContextType | null>(null);
