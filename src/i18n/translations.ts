@@ -539,7 +539,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "How long does it take?",
       a3: "AI analysis takes 2-5 minutes. After payment, you can download the file immediately.",
       q4: "Are my files safe?",
-      a4: "All files are stored on encrypted servers and automatically deleted after 30 days.",
+      a4: "All files are stored on encrypted servers and automatically deleted after 14 days.",
+      q5: "Is there not enough server space to store files?",
+      a5: "After the service is completed and you download the file, files are immediately deleted from our server. No files are stored on the server.",
     },
     upload: {
       title: "Upload Thesis",
