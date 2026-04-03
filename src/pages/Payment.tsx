@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CreditCard, QrCode, CheckCircle, Loader2, Download } from "lucide-react";
+import { CheckCircle, Loader2, Download } from "lucide-react";
+import mbankQr from "@/assets/mbank-qr.jpeg";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
