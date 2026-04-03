@@ -70,6 +70,8 @@ type TranslationKeys = {
     a3: string;
     q4: string;
     a4: string;
+    q5: string;
+    a5: string;
   };
   upload: {
     title: string;
@@ -183,7 +185,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "Канча убакыт талап кылынат?",
       a3: "AI анализ 2-5 мүнөт ичинде аяктайт. Төлөмдөн кийин файлды дароо жүктөп алсаңыз болот.",
       q4: "Файлдарым коопсузбу?",
-      a4: "Бардык файлдар шифрленген серверлерде сакталат жана 30 күндөн кийин автоматтык түрдө жок кылынат.",
+      a4: "Бардык файлдар шифрленген серверлерде сакталат жана 14 күндөн кийин автоматтык түрдө жок кылынат.",
+      q5: "Файлдарды сактаганы серверде орун жетишпейт?",
+      a5: "Кызмат аткарылып, сиз жүктөп алгандан кийин файлдар биздин серверден дароо өчүрүлөт. Серверде эч кандай файл сакталбайт.",
     },
     upload: {
       title: "Дипломдук ишти жүктөө",
@@ -299,7 +303,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "Ne kadar sürer?",
       a3: "AI analizi 2-5 dakika içinde tamamlanır. Ödeme sonrasında dosyayı hemen indirebilirsiniz.",
       q4: "Dosyalarım güvende mi?",
-      a4: "Tüm dosyalar şifreli sunucularda saklanır ve 30 gün sonra otomatik olarak silinir.",
+      a4: "Tüm dosyalar şifreli sunucularda saklanır ve 14 gün sonra otomatik olarak silinir.",
+      q5: "Dosyaları saklamak için sunucuda yeterli alan yok mu?",
+      a5: "Hizmet tamamlandıktan ve dosyayı indirdikten sonra dosyalar sunucumuzdan hemen silinir. Sunucuda hiçbir dosya saklanmaz.",
     },
     upload: {
       title: "Tez Yükleme",
@@ -415,7 +421,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "Сколько времени это занимает?",
       a3: "AI-анализ занимает 2-5 минут. После оплаты файл можно скачать сразу.",
       q4: "Мои файлы в безопасности?",
-      a4: "Все файлы хранятся на зашифрованных серверах и автоматически удаляются через 30 дней.",
+      a4: "Все файлы хранятся на зашифрованных серверах и автоматически удаляются через 14 дней.",
+      q5: "Не хватает места на сервере для хранения файлов?",
+      a5: "После выполнения услуги и скачивания файла, файлы немедленно удаляются с нашего сервера. На сервере ничего не хранится.",
     },
     upload: {
       title: "Загрузка дипломной работы",
@@ -531,7 +539,9 @@ export const translations: Record<Language, TranslationKeys> = {
       q3: "How long does it take?",
       a3: "AI analysis takes 2-5 minutes. After payment, you can download the file immediately.",
       q4: "Are my files safe?",
-      a4: "All files are stored on encrypted servers and automatically deleted after 30 days.",
+      a4: "All files are stored on encrypted servers and automatically deleted after 14 days.",
+      q5: "Is there not enough server space to store files?",
+      a5: "After the service is completed and you download the file, files are immediately deleted from our server. No files are stored on the server.",
     },
     upload: {
       title: "Upload Thesis",
