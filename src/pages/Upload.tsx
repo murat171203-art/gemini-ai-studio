@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
-import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import type { University } from "@/contexts/DocumentContext";
+import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2, GraduationCap } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,10 +11,17 @@ import { repairDocx } from "@/lib/docxRepair";
 
 type AnalysisStage = "idle" | "uploading" | "stage1" | "stage2" | "stage3" | "repairing" | "complete";
 
+const universities: { id: University; name: string; full: string }[] = [
+  { id: "ktmu", name: "КТМУ", full: "Кыргыз-Түрк «Манас» университети" },
+  { id: "bmu", name: "БМУ", full: "Бишкек мамлекеттик университети" },
+  { id: "knu", name: "КНУ", full: "Ж. Баласагын атындагы КНУ" },
+  { id: "ktu", name: "КТУ", full: "И. Раззаков атындагы КТУ" },
+];
+
 const Upload = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { setOriginalFile, setRepairedResult, setProcessing, repairStats } = useDocument();
+  const { setOriginalFile, setRepairedResult, setProcessing, repairStats, university, setUniversity } = useDocument();
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<AnalysisStage>("idle");
@@ -48,7 +56,6 @@ const Upload = () => {
       return () => { clearInterval(interval); clearTimeout(timer); };
     }
     if (stage === "repairing" && file) {
-      // Actually repair the document
       setProcessing(true);
       repairDocx(file)
         .then(({ blob, stats }) => {
@@ -98,9 +105,69 @@ const Upload = () => {
     ? repairStats.fontFixes + repairStats.sizeFixes + repairStats.spacingFixes + repairStats.indentFixes + repairStats.tableFixes
     : 0;
 
+  // If no university selected yet, show university picker
+  if (!university) {
+    return (
+      <div className="min-h-screen pt-24 pb-16">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <motion.h1
+            className="text-3xl font-bold text-center mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            Университетти тандаңыз
+          </motion.h1>
+          <motion.p
+            className="text-muted-foreground text-center mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            Документтин форматы тандалган университеттин стандарттарына ылайык болот
+          </motion.p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {universities.map((uni, i) => (
+              <motion.button
+                key={uni.id}
+                className="glass rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 border border-border/50 hover:border-primary/60 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                onClick={() => setUniversity(uni.id)}
+              >
+                <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mx-auto mb-3 transition-colors">
+                  <GraduationCap className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-1">{uni.name}</h3>
+                <p className="text-muted-foreground text-xs leading-tight">{uni.full}</p>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedUni = universities.find(u => u.id === university);
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-xl">
+        <motion.div
+          className="flex items-center justify-center gap-2 mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <button
+            onClick={() => setUniversity(null as any)}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
+          >
+            ← Башка университет
+          </button>
+          <span className="text-sm font-medium text-primary">{selectedUni?.name}</span>
+        </motion.div>
+
         <motion.h1
           className="text-3xl font-bold text-center mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -139,28 +206,20 @@ const Upload = () => {
               <div className="glass rounded-xl p-4 text-left w-full space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>
-                    {repairStats.fontFixes + repairStats.sizeFixes} шрифт оңдоосу / font fixes
-                  </span>
+                  <span>{repairStats.fontFixes + repairStats.sizeFixes} шрифт оңдоосу / font fixes</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>
-                    {repairStats.spacingFixes} интервал оңдоосу / spacing fixes
-                  </span>
+                  <span>{repairStats.spacingFixes} интервал оңдоосу / spacing fixes</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>
-                    {repairStats.indentFixes} чегинүү оңдоосу / indent fixes
-                  </span>
+                  <span>{repairStats.indentFixes} чегинүү оңдоосу / indent fixes</span>
                 </div>
                 {repairStats.tableFixes > 0 && (
                   <div className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span>
-                      {repairStats.tableFixes} таблица оңдоосу / table fixes
-                    </span>
+                    <span>{repairStats.tableFixes} таблица оңдоосу / table fixes</span>
                   </div>
                 )}
                 {repairStats.marginFixed && (
