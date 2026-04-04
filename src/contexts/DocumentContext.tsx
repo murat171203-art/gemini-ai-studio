@@ -60,7 +60,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const reset = useCallback(() => setState(initialState), []);
 
   return (
-    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, reset }}>
+    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setIsPaid, reset }}>
       {children}
     </DocumentContext.Provider>
   );
