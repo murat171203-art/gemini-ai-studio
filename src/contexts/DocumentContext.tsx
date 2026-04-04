@@ -10,6 +10,7 @@ interface DocumentState {
   isProcessing: boolean;
   fileName: string;
   university: University | null;
+  isPaid: boolean;
 }
 
 interface DocumentContextType extends DocumentState {
