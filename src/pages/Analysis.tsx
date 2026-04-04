@@ -1,13 +1,27 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
 import { AlertCircle, CheckCircle, FileText, Hash, Type, AlignLeft, Table2, Columns3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link, Navigate } from "react-router-dom";
+import { extractDocxParagraphs, type DocxParagraph } from "@/lib/docxTextExtract";
 
 const Analysis = () => {
   const { t } = useLanguage();
-  const { repairStats, fileName, repairedBlob } = useDocument();
+  const { repairStats, fileName, repairedBlob, originalFile } = useDocument();
+  const [paragraphs, setParagraphs] = useState<DocxParagraph[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!originalFile) return;
+    setLoading(true);
+    extractDocxParagraphs(originalFile)
+      .then((p) => setParagraphs(p))
+      .catch(() => setParagraphs([]))
+      .finally(() => setLoading(false));
+  }, [originalFile]);
 
   if (!repairStats) {
     return <Navigate to="/upload" replace />;
@@ -79,30 +93,64 @@ const Analysis = () => {
           </motion.div>
         )}
 
-        {/* Preview with watermark */}
+        {/* Real document preview with watermark */}
         <motion.div
-          className="glass rounded-xl p-8 relative overflow-hidden mb-8"
+          className="glass rounded-xl p-6 relative overflow-hidden mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
           <h3 className="font-semibold mb-4">{t.analysis.preview}</h3>
-          <div className="bg-secondary/50 rounded-lg p-6 min-h-[300px] relative">
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-full" />
-              <div className="h-3 bg-muted rounded w-5/6" />
-              <div className="h-3 bg-muted rounded w-full" />
-              <div className="h-4 bg-muted rounded w-1/2 mt-6" />
-              <div className="h-3 bg-muted rounded w-full" />
-              <div className="h-3 bg-muted rounded w-4/5" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-primary/20 font-bold text-lg text-center select-none" style={{ transform: "rotate(-30deg)" }}>
-                {t.analysis.watermark}
-              </p>
+          <div className="bg-white rounded-lg relative shadow-inner border border-border/50">
+            <ScrollArea className="h-[420px]">
+              <div className="p-8 space-y-2 select-none" style={{ fontFamily: "'Times New Roman', serif" }}>
+                {loading ? (
+                  <div className="space-y-3 animate-pulse">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div key={i} className="h-3 bg-muted rounded" style={{ width: `${60 + Math.random() * 40}%` }} />
+                    ))}
+                  </div>
+                ) : paragraphs.length > 0 ? (
+                  paragraphs.slice(0, 80).map((p, i) => (
+                    <p
+                      key={i}
+                      className={`text-sm leading-relaxed text-gray-800 ${
+                        p.isHeading ? "text-base font-bold mt-4" : ""
+                      } ${p.isBold ? "font-bold" : ""} ${p.isCenter ? "text-center" : ""}`}
+                    >
+                      {p.text}
+                    </p>
+                  ))
+                ) : (
+                  <div className="space-y-3">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="h-3 bg-muted rounded" style={{ width: `${60 + Math.random() * 40}%` }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Watermark overlay */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
+              {Array.from({ length: 5 }).map((_, row) => (
+                <div key={row} className="flex justify-around" style={{ marginTop: row === 0 ? "40px" : "60px" }}>
+                  {Array.from({ length: 3 }).map((_, col) => (
+                    <p
+                      key={col}
+                      className="text-red-500/20 font-bold text-lg select-none whitespace-nowrap"
+                      style={{ transform: "rotate(-30deg)" }}
+                    >
+                      {t.analysis.watermark}
+                    </p>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-3 text-center">
+            Суу белгисиз версияны жүктөп алуу үчүн төлөм жасаңыз
+          </p>
         </motion.div>
 
         {/* Pay CTA */}
