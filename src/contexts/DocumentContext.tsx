@@ -53,6 +53,10 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ ...prev, university: u }));
   }, []);
 
+  const setIsPaid = useCallback((v: boolean) => {
+    setState(prev => ({ ...prev, isPaid: v }));
+  }, []);
+
   const reset = useCallback(() => setState(initialState), []);
 
   return (
