@@ -10,6 +10,7 @@ interface DocumentState {
   isProcessing: boolean;
   fileName: string;
   university: University | null;
+  isPaid: boolean;
 }
 
 interface DocumentContextType extends DocumentState {
@@ -17,6 +18,7 @@ interface DocumentContextType extends DocumentState {
   setRepairedResult: (blob: Blob, stats: RepairStats) => void;
   setProcessing: (v: boolean) => void;
   setUniversity: (u: University) => void;
+  setIsPaid: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -27,6 +29,7 @@ const initialState: DocumentState = {
   isProcessing: false,
   fileName: "",
   university: null,
+  isPaid: false,
 };
 
 const DocumentContext = createContext<DocumentContextType | null>(null);
@@ -50,10 +53,14 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ ...prev, university: u }));
   }, []);
 
+  const setIsPaid = useCallback((v: boolean) => {
+    setState(prev => ({ ...prev, isPaid: v }));
+  }, []);
+
   const reset = useCallback(() => setState(initialState), []);
 
   return (
-    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, reset }}>
+    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setIsPaid, reset }}>
       {children}
     </DocumentContext.Provider>
   );

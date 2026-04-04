@@ -1,20 +1,28 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CheckCircle, Loader2, Download } from "lucide-react";
+import { useDocument } from "@/contexts/DocumentContext";
+import { CheckCircle, Loader2, Download, AlertCircle } from "lucide-react";
 import mbankQr from "@/assets/mbank-qr.jpeg";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 
 const Payment = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { repairStats, fileName, setIsPaid } = useDocument();
   const [status, setStatus] = useState<"pending" | "verifying" | "success">("pending");
+
+  // Must have completed analysis first
+  if (!repairStats) {
+    return <Navigate to="/upload" replace />;
+  }
 
   const handleIPaid = () => {
     setStatus("verifying");
     setTimeout(() => {
       setStatus("success");
+      setIsPaid(true);
     }, 3000);
   };
 
@@ -51,6 +59,9 @@ const Payment = () => {
             <h2 className="text-sm font-semibold text-green-400 mb-4">MBank</h2>
 
             <h1 className="text-2xl font-bold mb-2">{t.payment.title}</h1>
+            <p className="text-muted-foreground mb-2">
+              {fileName}
+            </p>
             <p className="text-muted-foreground mb-6">
               {t.payment.amount}: <span className="text-foreground font-bold text-xl">500 сом</span>
             </p>
@@ -74,6 +85,14 @@ const Payment = () => {
                 {t.payment.iPaid || "Мен төлөдүм ✓"}
               </Button>
             )}
+
+            <Button
+              asChild
+              variant="ghost"
+              className="w-full mt-3 text-muted-foreground"
+            >
+              <Link to="/analysis">← Артка</Link>
+            </Button>
           </>
         )}
       </motion.div>
