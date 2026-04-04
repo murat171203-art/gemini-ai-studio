@@ -29,6 +29,7 @@ const initialState: DocumentState = {
   isProcessing: false,
   fileName: "",
   university: null,
+  isPaid: false,
 };
 
 const DocumentContext = createContext<DocumentContextType | null>(null);
