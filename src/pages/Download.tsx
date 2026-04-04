@@ -1,16 +1,26 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
-import { FileDown, CheckCircle, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { FileDown, CheckCircle, AlertCircle, FileText, Loader2, Lock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { convertDocxBlobToPdf } from "@/lib/docxToPdf";
 
 const Download = () => {
   const { t } = useLanguage();
-  const { repairedBlob, fileName, repairStats } = useDocument();
+  const { repairedBlob, fileName, repairStats, isPaid } = useDocument();
   const [isConverting, setIsConverting] = useState(false);
+
+  // No file at all → go to upload
+  if (!repairedBlob) {
+    return <Navigate to="/upload" replace />;
+  }
+
+  // File exists but not paid → go to payment
+  if (!isPaid) {
+    return <Navigate to="/payment" replace />;
+  }
 
   const baseName = fileName.replace(/\.docx$/i, "");
 
@@ -46,27 +56,6 @@ const Download = () => {
     }
   };
 
-  if (!repairedBlob) {
-    return (
-      <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
-        <motion.div
-          className="glass rounded-2xl p-8 w-full max-w-md text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Файл табылган жок</h2>
-          <p className="text-muted-foreground text-sm mb-6">
-            Алгач DOCX файлды жүктөп, оңдотуңуз
-          </p>
-          <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link to="/upload">{t.nav.upload}</Link>
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
   const totalFixes = repairStats
     ? repairStats.fontFixes + repairStats.sizeFixes + repairStats.spacingFixes + repairStats.indentFixes + repairStats.tableFixes
     : 0;
@@ -81,7 +70,7 @@ const Download = () => {
         <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-7 h-7 text-green-500" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Оңдоо ийгиликтүү!</h1>
+        <h1 className="text-2xl font-bold mb-2">{t.download.thankYou}</h1>
         <p className="text-muted-foreground mb-4">{fileName}</p>
 
         {repairStats && (
