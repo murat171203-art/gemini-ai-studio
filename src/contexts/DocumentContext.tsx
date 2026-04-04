@@ -18,6 +18,7 @@ interface DocumentContextType extends DocumentState {
   setRepairedResult: (blob: Blob, stats: RepairStats) => void;
   setProcessing: (v: boolean) => void;
   setUniversity: (u: University) => void;
+  setIsPaid: (v: boolean) => void;
   reset: () => void;
 }
 
