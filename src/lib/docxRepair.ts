@@ -34,41 +34,35 @@ const INTRO_KEYWORDS = ["Киришүү", "Введение", "Giriş", "Introdu
 const CHAPTER_KEYWORDS = ["Бөлүм", "Глава", "Bölüm", "Chapter"];
 
 // ============================================================
-// ALGORITHM 1: SECTION BREAKS & PAGE NUMBERING
+// ALGORITHM 1: SECTION BREAKS & PAGE NUMBERING (ManasPrint Rule)
 // ============================================================
-// Section 1: Title pages — no page numbers
-// Section 2: From "Preface" to before "Abstract" — Roman numerals (ii, iii...)
-// Section 3: From "Abstract" to end — Arabic numerals, continuing count
+// The document is split at the "Introduction" (Киришүү / Введение / Giriş / Introduction) heading.
+// Section 1 (Abstract/TOC — everything before Introduction): Roman numerals (i, ii, iii)
+//   - Title pages get no visible page number (first 1-2 pages)
+// Section 2 (Introduction onwards): Arabic numerals restarting at 1
 
 interface SectionInfo {
-  prefaceParaIndex: number;
-  abstractParaIndex: number;
+  introParaIndex: number; // index of the Introduction paragraph
 }
 
 function findSectionBoundaries(xml: string): SectionInfo {
   const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
-  let prefaceIdx = -1;
-  let abstractIdx = -1;
+  let introIdx = -1;
 
   for (let i = 0; i < paragraphs.length; i++) {
     const text = extractText(paragraphs[i]).trim();
-    if (prefaceIdx === -1 && PREFACE_KEYWORDS.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      prefaceIdx = i;
-    }
-    if (abstractIdx === -1 && ABSTRACT_KEYWORDS.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      abstractIdx = i;
+    // Match Introduction heading in any supported language
+    if (INTRO_KEYWORDS.some(k => text.toLowerCase() === k.toLowerCase() || 
+        text.toLowerCase().startsWith(k.toLowerCase()))) {
+      // Verify it's a heading-like paragraph (short text, possibly styled)
+      if (text.length < 80) {
+        introIdx = i;
+        break;
+      }
     }
   }
 
-  return { prefaceParaIndex: prefaceIdx, abstractParaIndex: abstractIdx };
-}
-
-function extractText(paragraphXml: string): string {
-  const textMatches = paragraphXml.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
-  return textMatches.map(m => {
-    const inner = m.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/);
-    return inner ? inner[1] : "";
-  }).join("");
+  return { introParaIndex: introIdx };
 }
 
 function buildSectPr(options: {
@@ -93,7 +87,7 @@ function buildSectPr(options: {
 }
 
 function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: string; count: number } {
-  if (boundaries.prefaceParaIndex === -1 && boundaries.abstractParaIndex === -1) {
+  if (boundaries.introParaIndex === -1) {
     return { xml, count: 0 };
   }
 
@@ -103,8 +97,7 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
   const bodyEndMatch = xml.match(/<\/w:body>/);
   if (!bodyStartMatch || !bodyEndMatch) return { xml, count: 0 };
 
-  // Remove existing sectPr from all paragraphs (inline section breaks)
-  // We'll re-add them at the right places
+  // Remove existing inline sectPr from all paragraphs
   const cleanedParagraphs = paragraphs.map(p => {
     return p.replace(/<w:sectPr>[\s\S]*?<\/w:sectPr>/g, "");
   });
@@ -116,34 +109,20 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
     finalSectPr = finalSectPrMatch[0].replace("</w:body>", "");
   }
 
-  // Build new paragraph array with section breaks inserted
+  // Build new paragraph array with section break before Introduction
   const newParagraphs: string[] = [];
 
   for (let i = 0; i < cleanedParagraphs.length; i++) {
-    // Before preface paragraph: insert section break for Section 1 (title pages, no numbers)
-    if (i === boundaries.prefaceParaIndex && boundaries.prefaceParaIndex > 0) {
-      // End Section 1 (no page numbers) by adding sectPr to previous paragraph
+    // Before the Introduction paragraph: end Section 1 (Roman numerals)
+    if (i === boundaries.introParaIndex && boundaries.introParaIndex > 0) {
       const prevIdx = newParagraphs.length - 1;
       if (prevIdx >= 0) {
-        const sect1 = buildSectPr({ margins: MARGINS, hidePageNumber: true });
-        // Insert sectPr inside the last <w:pPr> of previous paragraph, or append before </w:p>
-        newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect1);
-        count++;
-      }
-    }
-
-    // Before abstract paragraph: insert section break for Section 2 (Roman numerals)
-    if (i === boundaries.abstractParaIndex && boundaries.abstractParaIndex > 0) {
-      const prevIdx = newParagraphs.length - 1;
-      if (prevIdx >= 0) {
-        // Section 2 ends here — Roman numerals starting from page after title pages
-        // If preface is page 5 (after 4 title pages), start roman at "ii" 
-        // because the first page of preface is the second page of section 2
-        const sect2 = buildSectPr({ 
+        // Section 1: Roman numerals (i, ii, iii...) for TOC/Abstract pages
+        const sect1 = buildSectPr({ 
           margins: MARGINS, 
           pageNumbering: { fmt: "lowerRoman", start: 1 } 
         });
-        newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect2);
+        newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect1);
         count++;
       }
     }
@@ -151,18 +130,24 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
     newParagraphs.push(cleanedParagraphs[i]);
   }
 
-  // Update final sectPr for Section 3 (Arabic numerals, continuing)
-  // Calculate approximate starting page for Arabic section
+  // Update final sectPr for Section 2 (Arabic numerals, restart at 1)
   let updatedFinalSectPr = finalSectPr;
-  if (boundaries.abstractParaIndex > 0) {
-    // Remove existing pgNumType from final sectPr and add Arabic continuing
+  if (boundaries.introParaIndex > 0) {
+    // Remove existing pgNumType
     updatedFinalSectPr = updatedFinalSectPr.replace(/<w:pgNumType[^/]*\/>/g, "");
-    // Insert Arabic page numbering — we use start="1" as a base, but the intent is continuous
-    // The actual page number depends on the physical page count of previous sections
-    const pgNumType = `<w:pgNumType w:fmt="decimal"/>`;
+    // Insert Arabic page numbering restarting at 1
+    const pgNumType = `<w:pgNumType w:fmt="decimal" w:start="1"/>`;
     updatedFinalSectPr = updatedFinalSectPr.replace(/<w:pgMar/, pgNumType + "<w:pgMar");
     
-    // Ensure margins are correct in final sectPr
+    // Ensure footer reference for page numbers
+    if (!updatedFinalSectPr.includes("rIdFooterRepair")) {
+      updatedFinalSectPr = updatedFinalSectPr.replace(
+        /<w:sectPr[^>]*>/,
+        `$&<w:footerReference w:type="default" r:id="rIdFooterRepair"/>`
+      );
+    }
+    
+    // Ensure margins are correct
     updatedFinalSectPr = updatedFinalSectPr
       .replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`)
       .replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`)
@@ -175,10 +160,7 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
   const beforeBody = xml.substring(0, bodyStartMatch.index! + "<w:body>".length);
   const afterBody = "</w:body>" + xml.substring(xml.indexOf("</w:body>") + "</w:body>".length);
 
-  // Get non-paragraph content between body tags (like bookmarkStart etc.)
   const bodyContent = xml.substring(bodyStartMatch.index! + "<w:body>".length, xml.indexOf("</w:body>"));
-  
-  // Extract non-paragraph elements that might exist
   const nonParaContent = bodyContent.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, "").replace(/<w:sectPr[^>]*>[\s\S]*?<\/w:sectPr>/g, "").trim();
 
   const newBody = newParagraphs.join("\n") + "\n" + updatedFinalSectPr;
