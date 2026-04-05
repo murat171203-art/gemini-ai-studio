@@ -237,9 +237,9 @@ const Upload = () => {
               </div>
               <Button
                 className="bg-primary text-primary-foreground hover:bg-primary/90 neon-glow mt-2 w-full"
-                onClick={() => navigate("/download")}
+                onClick={() => navigate("/analysis")}
               >
-                Жүктөп алуу / Download
+                Текшерүү / Preview
               </Button>
             </div>
           ) : stage !== "idle" ? (
