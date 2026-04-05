@@ -33,6 +33,14 @@ const ABSTRACT_KEYWORDS = ["Өзет", "Аннотация", "Özet", "Abstract"
 const INTRO_KEYWORDS = ["Киришүү", "Введение", "Giriş", "Introduction"];
 const CHAPTER_KEYWORDS = ["Бөлүм", "Глава", "Bölüm", "Chapter"];
 
+function extractText(paragraphXml: string): string {
+  const textMatches = paragraphXml.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
+  return textMatches.map(m => {
+    const inner = m.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/);
+    return inner ? inner[1] : "";
+  }).join("");
+}
+
 // ============================================================
 // ALGORITHM 1: SECTION BREAKS & PAGE NUMBERING (ManasPrint Rule)
 // ============================================================
