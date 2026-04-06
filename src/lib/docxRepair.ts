@@ -141,7 +141,7 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo, margins: type
       if (prevIdx >= 0) {
         // Section 1: Roman numerals (i, ii, iii...) for TOC/Abstract pages
         const sect1 = buildSectPr({ 
-          margins: MARGINS, 
+          margins, 
           pageNumbering: { fmt: "lowerRoman", start: 1 } 
         });
         newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect1);
@@ -171,10 +171,10 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo, margins: type
     
     // Ensure margins are correct
     updatedFinalSectPr = updatedFinalSectPr
-      .replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`)
-      .replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`)
-      .replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`)
-      .replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
+      .replace(/w:left="[^"]*"/, `w:left="${margins.left}"`)
+      .replace(/w:top="[^"]*"/, `w:top="${margins.top}"`)
+      .replace(/w:right="[^"]*"/, `w:right="${margins.right}"`)
+      .replace(/w:bottom="[^"]*"/, `w:bottom="${margins.bottom}"`);
     count++;
   }
 
@@ -454,21 +454,21 @@ function escapeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function fixMargins(xml: string): { xml: string; fixed: boolean } {
+function fixMargins(xml: string, margins: typeof KTMU_MARGINS): { xml: string; fixed: boolean } {
   const sectPrRegex = /<w:pgMar[^/]*\/>/g;
   let fixed = false;
   
   const newXml = xml.replace(sectPrRegex, (match) => {
     fixed = true;
     let result = match;
-    result = result.replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`);
-    result = result.replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`);
-    result = result.replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`);
-    result = result.replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
-    if (!result.includes('w:left=')) result = result.replace('w:pgMar', `w:pgMar w:left="${MARGINS.left}"`);
-    if (!result.includes('w:top=')) result = result.replace('w:pgMar', `w:pgMar w:top="${MARGINS.top}"`);
-    if (!result.includes('w:right=')) result = result.replace('w:pgMar', `w:pgMar w:right="${MARGINS.right}"`);
-    if (!result.includes('w:bottom=')) result = result.replace('w:pgMar', `w:pgMar w:bottom="${MARGINS.bottom}"`);
+    result = result.replace(/w:left="[^"]*"/, `w:left="${margins.left}"`);
+    result = result.replace(/w:top="[^"]*"/, `w:top="${margins.top}"`);
+    result = result.replace(/w:right="[^"]*"/, `w:right="${margins.right}"`);
+    result = result.replace(/w:bottom="[^"]*"/, `w:bottom="${margins.bottom}"`);
+    if (!result.includes('w:left=')) result = result.replace('w:pgMar', `w:pgMar w:left="${margins.left}"`);
+    if (!result.includes('w:top=')) result = result.replace('w:pgMar', `w:pgMar w:top="${margins.top}"`);
+    if (!result.includes('w:right=')) result = result.replace('w:pgMar', `w:pgMar w:right="${margins.right}"`);
+    if (!result.includes('w:bottom=')) result = result.replace('w:pgMar', `w:pgMar w:bottom="${margins.bottom}"`);
     return result;
   });
   
