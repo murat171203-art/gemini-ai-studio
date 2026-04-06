@@ -108,7 +108,7 @@ function buildSectPr(options: {
   return `<w:sectPr>${footerRef}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${margins.top}" w:right="${margins.right}" w:bottom="${margins.bottom}" w:left="${margins.left}" w:header="720" w:footer="720" w:gutter="0"/>${pgNumFmt}<w:cols w:space="720"/></w:sectPr>`;
 }
 
-function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: string; count: number } {
+function insertSectionBreaks(xml: string, boundaries: SectionInfo, margins: typeof KTMU_MARGINS): { xml: string; count: number } {
   if (boundaries.introParaIndex === -1) {
     return { xml, count: 0 };
   }
