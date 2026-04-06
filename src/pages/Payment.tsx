@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
 import { CheckCircle, Loader2, Download, AlertCircle } from "lucide-react";
-import mbankQr from "@/assets/mbank-qr.jpeg";
+import bakAiQr from "@/assets/bak-ai-qr.jpg";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Navigate, useNavigate, Link } from "react-router-dom";
