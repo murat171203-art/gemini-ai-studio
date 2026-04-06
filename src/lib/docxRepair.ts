@@ -688,9 +688,11 @@ async function addFooterRelationship(zip: JSZip): Promise<void> {
 // MAIN REPAIR FUNCTION
 // ============================================================
 
-export async function repairDocx(file: File): Promise<{ blob: Blob; stats: RepairStats }> {
+export async function repairDocx(file: File, university?: University): Promise<{ blob: Blob; stats: RepairStats }> {
   const arrayBuffer = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(arrayBuffer);
+  const margins = getMarginsForUniversity(university);
+  const isKtmu = university === "ktmu";
   
   const stats: RepairStats = {
     fontFixes: 0,
@@ -713,7 +715,7 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   let docXml = await docXmlFile.async("string");
   
   // 1. Fix margins
-  const marginResult = fixMargins(docXml);
+  const marginResult = fixMargins(docXml, margins);
   docXml = marginResult.xml;
   stats.marginFixed = marginResult.fixed;
   
@@ -742,12 +744,14 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   docXml = indentResult.xml;
   stats.indentFixes = indentResult.count;
   
-  // 7. ALGORITHM 1: Section breaks & page numbering
-  const boundaries = findSectionBoundaries(docXml);
-  const sectionResult = insertSectionBreaks(docXml, boundaries);
-  docXml = sectionResult.xml;
-  stats.sectionBreaksAdded = sectionResult.count;
-  stats.pageNumberFixed = sectionResult.count > 0;
+  // 7. ALGORITHM 1: Section breaks & page numbering (KTMU only)
+  if (isKtmu) {
+    const boundaries = findSectionBoundaries(docXml);
+    const sectionResult = insertSectionBreaks(docXml, boundaries, margins);
+    docXml = sectionResult.xml;
+    stats.sectionBreaksAdded = sectionResult.count;
+    stats.pageNumberFixed = sectionResult.count > 0;
+  }
   
   // 8. ALGORITHM 3: Table & figure renumbering
   const renumberResult = renumberTablesAndFigures(docXml);
