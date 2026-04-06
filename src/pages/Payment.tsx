@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
 import { CheckCircle, Loader2, Download, AlertCircle } from "lucide-react";
-import mbankQr from "@/assets/mbank-qr.jpeg";
+import bakAiQr from "@/assets/bak-ai-qr.jpg";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Navigate, useNavigate, Link } from "react-router-dom";
@@ -68,7 +68,7 @@ const Payment = () => {
 
             {/* QR Code */}
             <div className="glass rounded-xl p-6 mb-6 inline-block">
-              <img src={mbankQr} alt="MBank QR" className="w-48 h-48 rounded-lg mx-auto object-contain" />
+              <img src={bakAiQr} alt="BAK-AI QR" className="w-48 h-48 rounded-lg mx-auto object-contain" />
               <p className="text-xs text-muted-foreground mt-3">{t.payment.scanQr}</p>
             </div>
 
