@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import type { University } from "@/contexts/DocumentContext";
 
 export interface RepairStats {
   fontFixes: number;
