@@ -15,12 +15,25 @@ export interface RepairStats {
 }
 
 // DXA units: 1cm = 567 DXA
-const MARGINS = {
+const KTMU_MARGINS = {
   left: 1985,   // 3.5cm
   top: 1701,    // 3.0cm
   right: 1418,  // 2.5cm
   bottom: 1418, // 2.5cm
 };
+
+// Standard margins for KNU, BMU, KTU (left 3cm, top 2cm, right 1.5cm, bottom 2cm)
+const STANDARD_MARGINS = {
+  left: 1701,   // 3.0cm
+  top: 1134,    // 2.0cm
+  right: 850,   // 1.5cm
+  bottom: 1134, // 2.0cm
+};
+
+function getMarginsForUniversity(university?: University) {
+  if (university === "ktmu") return KTMU_MARGINS;
+  return STANDARD_MARGINS;
+}
 
 const FONT_NAME = "Times New Roman";
 const FONT_SIZE = 24; // half-points (12pt = 24)
