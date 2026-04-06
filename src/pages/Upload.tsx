@@ -3,6 +3,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
 import type { University } from "@/contexts/DocumentContext";
 import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2, GraduationCap } from "lucide-react";
+import bmuLogo from "@/assets/bmu-logo.jpg";
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
