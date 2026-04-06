@@ -137,8 +137,12 @@ const Upload = () => {
                 transition={{ delay: 0.1 + i * 0.05 }}
                 onClick={() => setUniversity(uni.id)}
               >
-                <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mx-auto mb-3 transition-colors">
-                  <GraduationCap className="w-7 h-7 text-primary" />
+                <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mx-auto mb-3 transition-colors overflow-hidden">
+                  {uni.id === "bmu" ? (
+                    <img src={bmuLogo} alt="БМУ" className="w-12 h-12 object-contain" />
+                  ) : (
+                    <GraduationCap className="w-7 h-7 text-primary" />
+                  )}
                 </div>
                 <h3 className="text-xl font-bold mb-1">{uni.name}</h3>
                 <p className="text-muted-foreground text-xs leading-tight">{uni.full}</p>
