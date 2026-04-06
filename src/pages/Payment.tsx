@@ -52,11 +52,10 @@ const Payment = () => {
           </div>
         ) : (
           <>
-            {/* MBank Logo */}
-            <div className="w-14 h-14 rounded-xl bg-green-600/20 flex items-center justify-center mx-auto mb-4">
-              <span className="text-green-400 font-bold text-lg">M</span>
+            {/* BAK-AI Logo */}
+            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-primary font-bold text-lg">💳</span>
             </div>
-            <h2 className="text-sm font-semibold text-green-400 mb-4">MBank</h2>
 
             <h1 className="text-2xl font-bold mb-2">{t.payment.title}</h1>
             <p className="text-muted-foreground mb-2">
