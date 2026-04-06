@@ -88,7 +88,7 @@ function findSectionBoundaries(xml: string): SectionInfo {
 }
 
 function buildSectPr(options: {
-  margins: typeof MARGINS;
+  margins: typeof KTMU_MARGINS;
   pageNumbering?: { fmt: string; start: number };
   hidePageNumber?: boolean;
 }): string {
