@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import type { University } from "@/contexts/DocumentContext";
 
 export interface RepairStats {
   fontFixes: number;
@@ -14,12 +15,25 @@ export interface RepairStats {
 }
 
 // DXA units: 1cm = 567 DXA
-const MARGINS = {
+const KTMU_MARGINS = {
   left: 1985,   // 3.5cm
   top: 1701,    // 3.0cm
   right: 1418,  // 2.5cm
   bottom: 1418, // 2.5cm
 };
+
+// Standard margins for KNU, BMU, KTU (left 3cm, top 2cm, right 1.5cm, bottom 2cm)
+const STANDARD_MARGINS = {
+  left: 1701,   // 3.0cm
+  top: 1134,    // 2.0cm
+  right: 850,   // 1.5cm
+  bottom: 1134, // 2.0cm
+};
+
+function getMarginsForUniversity(university?: University) {
+  if (university === "ktmu") return KTMU_MARGINS;
+  return STANDARD_MARGINS;
+}
 
 const FONT_NAME = "Times New Roman";
 const FONT_SIZE = 24; // half-points (12pt = 24)
@@ -74,7 +88,7 @@ function findSectionBoundaries(xml: string): SectionInfo {
 }
 
 function buildSectPr(options: {
-  margins: typeof MARGINS;
+  margins: typeof KTMU_MARGINS;
   pageNumbering?: { fmt: string; start: number };
   hidePageNumber?: boolean;
 }): string {
@@ -94,7 +108,7 @@ function buildSectPr(options: {
   return `<w:sectPr>${footerRef}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${margins.top}" w:right="${margins.right}" w:bottom="${margins.bottom}" w:left="${margins.left}" w:header="720" w:footer="720" w:gutter="0"/>${pgNumFmt}<w:cols w:space="720"/></w:sectPr>`;
 }
 
-function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: string; count: number } {
+function insertSectionBreaks(xml: string, boundaries: SectionInfo, margins: typeof KTMU_MARGINS): { xml: string; count: number } {
   if (boundaries.introParaIndex === -1) {
     return { xml, count: 0 };
   }
@@ -127,7 +141,7 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
       if (prevIdx >= 0) {
         // Section 1: Roman numerals (i, ii, iii...) for TOC/Abstract pages
         const sect1 = buildSectPr({ 
-          margins: MARGINS, 
+          margins, 
           pageNumbering: { fmt: "lowerRoman", start: 1 } 
         });
         newParagraphs[prevIdx] = insertSectPrIntoParagraph(newParagraphs[prevIdx], sect1);
@@ -157,10 +171,10 @@ function insertSectionBreaks(xml: string, boundaries: SectionInfo): { xml: strin
     
     // Ensure margins are correct
     updatedFinalSectPr = updatedFinalSectPr
-      .replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`)
-      .replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`)
-      .replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`)
-      .replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
+      .replace(/w:left="[^"]*"/, `w:left="${margins.left}"`)
+      .replace(/w:top="[^"]*"/, `w:top="${margins.top}"`)
+      .replace(/w:right="[^"]*"/, `w:right="${margins.right}"`)
+      .replace(/w:bottom="[^"]*"/, `w:bottom="${margins.bottom}"`);
     count++;
   }
 
@@ -440,21 +454,21 @@ function escapeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function fixMargins(xml: string): { xml: string; fixed: boolean } {
+function fixMargins(xml: string, margins: typeof KTMU_MARGINS): { xml: string; fixed: boolean } {
   const sectPrRegex = /<w:pgMar[^/]*\/>/g;
   let fixed = false;
   
   const newXml = xml.replace(sectPrRegex, (match) => {
     fixed = true;
     let result = match;
-    result = result.replace(/w:left="[^"]*"/, `w:left="${MARGINS.left}"`);
-    result = result.replace(/w:top="[^"]*"/, `w:top="${MARGINS.top}"`);
-    result = result.replace(/w:right="[^"]*"/, `w:right="${MARGINS.right}"`);
-    result = result.replace(/w:bottom="[^"]*"/, `w:bottom="${MARGINS.bottom}"`);
-    if (!result.includes('w:left=')) result = result.replace('w:pgMar', `w:pgMar w:left="${MARGINS.left}"`);
-    if (!result.includes('w:top=')) result = result.replace('w:pgMar', `w:pgMar w:top="${MARGINS.top}"`);
-    if (!result.includes('w:right=')) result = result.replace('w:pgMar', `w:pgMar w:right="${MARGINS.right}"`);
-    if (!result.includes('w:bottom=')) result = result.replace('w:pgMar', `w:pgMar w:bottom="${MARGINS.bottom}"`);
+    result = result.replace(/w:left="[^"]*"/, `w:left="${margins.left}"`);
+    result = result.replace(/w:top="[^"]*"/, `w:top="${margins.top}"`);
+    result = result.replace(/w:right="[^"]*"/, `w:right="${margins.right}"`);
+    result = result.replace(/w:bottom="[^"]*"/, `w:bottom="${margins.bottom}"`);
+    if (!result.includes('w:left=')) result = result.replace('w:pgMar', `w:pgMar w:left="${margins.left}"`);
+    if (!result.includes('w:top=')) result = result.replace('w:pgMar', `w:pgMar w:top="${margins.top}"`);
+    if (!result.includes('w:right=')) result = result.replace('w:pgMar', `w:pgMar w:right="${margins.right}"`);
+    if (!result.includes('w:bottom=')) result = result.replace('w:pgMar', `w:pgMar w:bottom="${margins.bottom}"`);
     return result;
   });
   
@@ -674,9 +688,11 @@ async function addFooterRelationship(zip: JSZip): Promise<void> {
 // MAIN REPAIR FUNCTION
 // ============================================================
 
-export async function repairDocx(file: File): Promise<{ blob: Blob; stats: RepairStats }> {
+export async function repairDocx(file: File, university?: University): Promise<{ blob: Blob; stats: RepairStats }> {
   const arrayBuffer = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(arrayBuffer);
+  const margins = getMarginsForUniversity(university);
+  const isKtmu = university === "ktmu";
   
   const stats: RepairStats = {
     fontFixes: 0,
@@ -699,7 +715,7 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   let docXml = await docXmlFile.async("string");
   
   // 1. Fix margins
-  const marginResult = fixMargins(docXml);
+  const marginResult = fixMargins(docXml, margins);
   docXml = marginResult.xml;
   stats.marginFixed = marginResult.fixed;
   
@@ -728,12 +744,14 @@ export async function repairDocx(file: File): Promise<{ blob: Blob; stats: Repai
   docXml = indentResult.xml;
   stats.indentFixes = indentResult.count;
   
-  // 7. ALGORITHM 1: Section breaks & page numbering
-  const boundaries = findSectionBoundaries(docXml);
-  const sectionResult = insertSectionBreaks(docXml, boundaries);
-  docXml = sectionResult.xml;
-  stats.sectionBreaksAdded = sectionResult.count;
-  stats.pageNumberFixed = sectionResult.count > 0;
+  // 7. ALGORITHM 1: Section breaks & page numbering (KTMU only)
+  if (isKtmu) {
+    const boundaries = findSectionBoundaries(docXml);
+    const sectionResult = insertSectionBreaks(docXml, boundaries, margins);
+    docXml = sectionResult.xml;
+    stats.sectionBreaksAdded = sectionResult.count;
+    stats.pageNumberFixed = sectionResult.count > 0;
+  }
   
   // 8. ALGORITHM 3: Table & figure renumbering
   const renumberResult = renumberTablesAndFigures(docXml);
