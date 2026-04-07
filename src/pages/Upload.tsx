@@ -141,6 +141,8 @@ const Upload = () => {
                 <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mx-auto mb-3 transition-colors overflow-hidden">
                   {uni.id === "bmu" ? (
                     <img src={bmuLogo} alt="БМУ" className="w-12 h-12 object-contain" />
+                  ) : uni.id === "knu" ? (
+                    <img src={knuLogo} alt="КНУ" className="w-12 h-12 object-contain" />
                   ) : (
                     <GraduationCap className="w-7 h-7 text-primary" />
                   )}
