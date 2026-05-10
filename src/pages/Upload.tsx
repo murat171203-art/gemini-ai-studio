@@ -28,7 +28,7 @@ const thesisTypes: { id: ThesisType; name: string; full: string; icon: typeof Bo
 const Upload = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { setOriginalFile, setRepairedResult, setProcessing, repairStats, university, setUniversity } = useDocument();
+  const { setOriginalFile, setRepairedResult, setProcessing, repairStats, university, setUniversity, thesisType, setThesisType } = useDocument();
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<AnalysisStage>("idle");
