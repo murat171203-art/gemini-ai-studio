@@ -233,12 +233,23 @@ const Upload = () => {
           animate={{ opacity: 1 }}
         >
           <button
-            onClick={() => setUniversity(null as any)}
+            onClick={() => setUniversity(null)}
             className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
           >
             ← Башка университет
           </button>
           <span className="text-sm font-medium text-primary">{selectedUni?.name}</span>
+          {selectedThesis && (
+            <>
+              <span className="text-xs text-muted-foreground">·</span>
+              <button
+                onClick={() => setThesisType(null)}
+                className="text-xs text-primary hover:underline"
+              >
+                {selectedThesis.name}
+              </button>
+            </>
+          )}
         </motion.div>
 
         <motion.h1
