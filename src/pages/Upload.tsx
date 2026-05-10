@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDocument } from "@/contexts/DocumentContext";
-import type { University } from "@/contexts/DocumentContext";
-import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2, GraduationCap } from "lucide-react";
+import type { University, ThesisType } from "@/contexts/DocumentContext";
+import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2, GraduationCap, BookOpen, Award } from "lucide-react";
 import bmuLogo from "@/assets/bmu-logo.jpg";
 import knuLogo from "@/assets/knu-logo.png";
 import { useState, useCallback, useEffect } from "react";
@@ -18,6 +18,11 @@ const universities: { id: University; name: string; full: string }[] = [
   { id: "bmu", name: "БМУ", full: "Бишкек мамлекеттик университети" },
   { id: "knu", name: "КНУ", full: "Ж. Баласагын атындагы КНУ" },
   { id: "ktu", name: "КТУ", full: "И. Раззаков атындагы КТУ" },
+];
+
+const thesisTypes: { id: ThesisType; name: string; full: string; icon: typeof BookOpen }[] = [
+  { id: "undergraduate_tourism", name: "Bitirme Tezi", full: "Лисанс — Туризм факультети (Ek-A)", icon: BookOpen },
+  { id: "graduate", name: "Lisansüstü", full: "Магистратура / Докторантура (2025 Kılavuzu)", icon: Award },
 ];
 
 const Upload = () => {
