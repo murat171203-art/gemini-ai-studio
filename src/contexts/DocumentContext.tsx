@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import type { RepairStats } from "@/lib/docxRepair";
 
 export type University = "ktmu" | "bmu" | "knu" | "ktu";
-export type ThesisType = "undergraduate_tourism" | "graduate";
+export type ThesisType = "undergraduate_tourism_eka" | "undergraduate_tourism_ekd" | "graduate";
 
 interface DocumentState {
   originalFile: File | null;

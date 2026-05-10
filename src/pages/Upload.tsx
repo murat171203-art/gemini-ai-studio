@@ -21,7 +21,8 @@ const universities: { id: University; name: string; full: string }[] = [
 ];
 
 const thesisTypes: { id: ThesisType; name: string; full: string; icon: typeof BookOpen }[] = [
-  { id: "undergraduate_tourism", name: "Bitirme Tezi", full: "Лисанс — Туризм факультети (Ek-A)", icon: BookOpen },
+  { id: "undergraduate_tourism_eka", name: "Bitirme Tezi · Ek-A", full: "Лисанс — Туризм факультети (Ek-A варианты)", icon: BookOpen },
+  { id: "undergraduate_tourism_ekd", name: "Bitirme Tezi · Ek-D", full: "Лисанс — Туризм факультети (Ek-D варианты)", icon: BookOpen },
   { id: "graduate", name: "Lisansüstü", full: "Магистратура / Докторантура (2025 Kılavuzu)", icon: Award },
 ];
 
@@ -195,7 +196,7 @@ const Upload = () => {
           >
             КТМУнун эрежелери ар бир баскычка ылайык айырмаланат (полелер, нумерация, структура)
           </motion.p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {thesisTypes.map((tt, i) => {
               const Icon = tt.icon;
               return (

@@ -46,8 +46,12 @@ const STANDARD_MARGINS = {
   bottom: 1134, // 2.0cm
 };
 
+function isUndergradTourism(t?: ThesisType) {
+  return t === "undergraduate_tourism_eka" || t === "undergraduate_tourism_ekd";
+}
+
 function getMargins(university?: University, thesisType?: ThesisType) {
-  if (thesisType === "undergraduate_tourism") return UNDERGRAD_TOURISM_MARGINS;
+  if (isUndergradTourism(thesisType)) return UNDERGRAD_TOURISM_MARGINS;
   if (thesisType === "graduate") return GRADUATE_MARGINS;
   if (university === "ktmu") return KTMU_MARGINS;
   return STANDARD_MARGINS;
@@ -711,7 +715,7 @@ export async function repairDocx(file: File, university?: University, thesisType
   const zip = await JSZip.loadAsync(arrayBuffer);
   const margins = getMargins(university, thesisType);
   const isKtmu = university === "ktmu";
-  const useSectionLogic = isKtmu || thesisType === "undergraduate_tourism" || thesisType === "graduate";
+  const useSectionLogic = isKtmu || isUndergradTourism(thesisType) || thesisType === "graduate";
   
   const stats: RepairStats = {
     fontFixes: 0,
