@@ -196,7 +196,7 @@ const Upload = () => {
           >
             КТМУнун эрежелери ар бир баскычка ылайык айырмаланат (полелер, нумерация, структура)
           </motion.p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {thesisTypes.map((tt, i) => {
               const Icon = tt.icon;
               return (
