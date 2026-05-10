@@ -706,11 +706,12 @@ async function addFooterRelationship(zip: JSZip): Promise<void> {
 // MAIN REPAIR FUNCTION
 // ============================================================
 
-export async function repairDocx(file: File, university?: University): Promise<{ blob: Blob; stats: RepairStats }> {
+export async function repairDocx(file: File, university?: University, thesisType?: ThesisType): Promise<{ blob: Blob; stats: RepairStats }> {
   const arrayBuffer = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(arrayBuffer);
-  const margins = getMarginsForUniversity(university);
+  const margins = getMargins(university, thesisType);
   const isKtmu = university === "ktmu";
+  const useSectionLogic = isKtmu || thesisType === "undergraduate_tourism" || thesisType === "graduate";
   
   const stats: RepairStats = {
     fontFixes: 0,
