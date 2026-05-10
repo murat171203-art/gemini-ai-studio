@@ -764,7 +764,7 @@ export async function repairDocx(file: File, university?: University, thesisType
   stats.indentFixes = indentResult.count;
   
   // 7. ALGORITHM 1: Section breaks & page numbering (KTMU only)
-  if (isKtmu) {
+  if (useSectionLogic) {
     const boundaries = findSectionBoundaries(docXml);
     const sectionResult = insertSectionBreaks(docXml, boundaries, margins);
     docXml = sectionResult.xml;
