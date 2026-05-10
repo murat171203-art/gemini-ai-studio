@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { University } from "@/contexts/DocumentContext";
+import type { University, ThesisType } from "@/contexts/DocumentContext";
 
 export interface RepairStats {
   fontFixes: number;
@@ -22,6 +22,22 @@ const KTMU_MARGINS = {
   bottom: 1418, // 2.5cm
 };
 
+// Bitirme Tezi (Лисанс, туризм факультети, Ek-A): сол/үстү 4см, оң/асты 2.5см
+const UNDERGRAD_TOURISM_MARGINS = {
+  left: 2268,   // 4.0cm
+  top: 2268,    // 4.0cm
+  right: 1418,  // 2.5cm
+  bottom: 1418, // 2.5cm
+};
+
+// Lisansüstü 2025 Kılavuzu: сол 3.5см, үстү 3.0см, оң/асты 2.5см
+const GRADUATE_MARGINS = {
+  left: 1985,   // 3.5cm
+  top: 1701,    // 3.0cm
+  right: 1418,  // 2.5cm
+  bottom: 1418, // 2.5cm
+};
+
 // Standard margins for KNU, BMU, KTU (left 3cm, top 2cm, right 1.5cm, bottom 2cm)
 const STANDARD_MARGINS = {
   left: 1701,   // 3.0cm
@@ -30,7 +46,9 @@ const STANDARD_MARGINS = {
   bottom: 1134, // 2.0cm
 };
 
-function getMarginsForUniversity(university?: University) {
+function getMargins(university?: University, thesisType?: ThesisType) {
+  if (thesisType === "undergraduate_tourism") return UNDERGRAD_TOURISM_MARGINS;
+  if (thesisType === "graduate") return GRADUATE_MARGINS;
   if (university === "ktmu") return KTMU_MARGINS;
   return STANDARD_MARGINS;
 }
