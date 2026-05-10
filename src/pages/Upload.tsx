@@ -64,7 +64,7 @@ const Upload = () => {
     }
     if (stage === "repairing" && file) {
       setProcessing(true);
-      repairDocx(file, university || undefined)
+      repairDocx(file, university || undefined, thesisType || undefined)
         .then(({ blob, stats }) => {
           setRepairedResult(blob, stats);
           setProgress(100);
