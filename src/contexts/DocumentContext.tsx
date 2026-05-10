@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import type { RepairStats } from "@/lib/docxRepair";
 
 export type University = "ktmu" | "bmu" | "knu" | "ktu";
+export type ThesisType = "undergraduate_tourism" | "graduate";
 
 interface DocumentState {
   originalFile: File | null;
@@ -10,6 +11,7 @@ interface DocumentState {
   isProcessing: boolean;
   fileName: string;
   university: University | null;
+  thesisType: ThesisType | null;
   isPaid: boolean;
 }
 
@@ -17,7 +19,8 @@ interface DocumentContextType extends DocumentState {
   setOriginalFile: (file: File) => void;
   setRepairedResult: (blob: Blob, stats: RepairStats) => void;
   setProcessing: (v: boolean) => void;
-  setUniversity: (u: University) => void;
+  setUniversity: (u: University | null) => void;
+  setThesisType: (t: ThesisType | null) => void;
   setIsPaid: (v: boolean) => void;
   reset: () => void;
 }
@@ -29,6 +32,7 @@ const initialState: DocumentState = {
   isProcessing: false,
   fileName: "",
   university: null,
+  thesisType: null,
   isPaid: false,
 };
 
