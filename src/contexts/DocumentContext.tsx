@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import type { RepairStats } from "@/lib/docxRepair";
 
 export type University = "ktmu" | "bmu" | "knu" | "ktu";
+export type ThesisType = "undergraduate_tourism" | "graduate";
 
 interface DocumentState {
   originalFile: File | null;
@@ -10,6 +11,7 @@ interface DocumentState {
   isProcessing: boolean;
   fileName: string;
   university: University | null;
+  thesisType: ThesisType | null;
   isPaid: boolean;
 }
 
@@ -17,7 +19,8 @@ interface DocumentContextType extends DocumentState {
   setOriginalFile: (file: File) => void;
   setRepairedResult: (blob: Blob, stats: RepairStats) => void;
   setProcessing: (v: boolean) => void;
-  setUniversity: (u: University) => void;
+  setUniversity: (u: University | null) => void;
+  setThesisType: (t: ThesisType | null) => void;
   setIsPaid: (v: boolean) => void;
   reset: () => void;
 }
@@ -29,6 +32,7 @@ const initialState: DocumentState = {
   isProcessing: false,
   fileName: "",
   university: null,
+  thesisType: null,
   isPaid: false,
 };
 
@@ -49,8 +53,12 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ ...prev, isProcessing: v }));
   }, []);
 
-  const setUniversity = useCallback((u: University) => {
-    setState(prev => ({ ...prev, university: u }));
+  const setUniversity = useCallback((u: University | null) => {
+    setState(prev => ({ ...prev, university: u, thesisType: u === null ? null : prev.thesisType }));
+  }, []);
+
+  const setThesisType = useCallback((t: ThesisType | null) => {
+    setState(prev => ({ ...prev, thesisType: t }));
   }, []);
 
   const setIsPaid = useCallback((v: boolean) => {
@@ -60,7 +68,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const reset = useCallback(() => setState(initialState), []);
 
   return (
-    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setIsPaid, reset }}>
+    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setThesisType, setIsPaid, reset }}>
       {children}
     </DocumentContext.Provider>
   );
