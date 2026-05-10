@@ -53,8 +53,12 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ ...prev, isProcessing: v }));
   }, []);
 
-  const setUniversity = useCallback((u: University) => {
-    setState(prev => ({ ...prev, university: u }));
+  const setUniversity = useCallback((u: University | null) => {
+    setState(prev => ({ ...prev, university: u, thesisType: u === null ? null : prev.thesisType }));
+  }, []);
+
+  const setThesisType = useCallback((t: ThesisType | null) => {
+    setState(prev => ({ ...prev, thesisType: t }));
   }, []);
 
   const setIsPaid = useCallback((v: boolean) => {
@@ -64,7 +68,7 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const reset = useCallback(() => setState(initialState), []);
 
   return (
-    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setIsPaid, reset }}>
+    <DocumentContext.Provider value={{ ...state, setOriginalFile, setRepairedResult, setProcessing, setUniversity, setThesisType, setIsPaid, reset }}>
       {children}
     </DocumentContext.Provider>
   );
