@@ -715,7 +715,7 @@ export async function repairDocx(file: File, university?: University, thesisType
   const zip = await JSZip.loadAsync(arrayBuffer);
   const margins = getMargins(university, thesisType);
   const isKtmu = university === "ktmu";
-  const useSectionLogic = isKtmu || thesisType === "undergraduate_tourism" || thesisType === "graduate";
+  const useSectionLogic = isKtmu || isUndergradTourism(thesisType) || thesisType === "graduate";
   
   const stats: RepairStats = {
     fontFixes: 0,
