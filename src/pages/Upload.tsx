@@ -162,7 +162,67 @@ const Upload = () => {
     );
   }
 
+  // KTMU: ask for thesis type (Bitirme Tezi vs Lisansüstü)
+  if (university === "ktmu" && !thesisType) {
+    return (
+      <div className="min-h-screen pt-24 pb-16">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <motion.div
+            className="flex items-center justify-center gap-2 mb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <button
+              onClick={() => setUniversity(null)}
+              className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
+            >
+              ← Башка университет
+            </button>
+            <span className="text-sm font-medium text-primary">КТМУ</span>
+          </motion.div>
+          <motion.h1
+            className="text-3xl font-bold text-center mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            Тезистин түрүн тандаңыз
+          </motion.h1>
+          <motion.p
+            className="text-muted-foreground text-center mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            КТМУнун эрежелери ар бир баскычка ылайык айырмаланат (полелер, нумерация, структура)
+          </motion.p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {thesisTypes.map((tt, i) => {
+              const Icon = tt.icon;
+              return (
+                <motion.button
+                  key={tt.id}
+                  className="glass rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 border border-border/50 hover:border-primary/60 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] group"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.05 }}
+                  onClick={() => setThesisType(tt.id)}
+                >
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mx-auto mb-3 transition-colors">
+                    <Icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-1">{tt.name}</h3>
+                  <p className="text-muted-foreground text-xs leading-tight">{tt.full}</p>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const selectedUni = universities.find(u => u.id === university);
+  const selectedThesis = thesisTypes.find(t => t.id === thesisType);
 
   return (
     <div className="min-h-screen pt-24 pb-16">
