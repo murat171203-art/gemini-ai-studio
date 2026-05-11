@@ -9,7 +9,8 @@ import { convertDocxBlobToPdf } from "@/lib/docxToPdf";
 
 const Download = () => {
   const { t } = useLanguage();
-  const { repairedBlob, fileName, repairStats, isPaid } = useDocument();
+  const { repairedBlob, fileName, repairStats, isPaid, thesisType } = useDocument();
+  const isTourism = thesisType === "undergraduate_tourism_eka" || thesisType === "undergraduate_tourism_ekd";
   const [isConverting, setIsConverting] = useState(false);
 
   // No file at all → go to upload
