@@ -1076,7 +1076,14 @@ export async function repairDocx(file: File, university?: University, thesisType
   
   // Save modified document.xml
   zip.file("word/document.xml", docXml);
-  
+
+  // Final validation: ensure ZIP package integrity (Tourism critical safety)
+  const ok = await validateDocxIntegrity(zip);
+  if (!ok) {
+    console.error("[docxRepair] Integrity check failed — returning original file to avoid corruption");
+    return { blob: new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), stats };
+  }
+
   // Generate repaired DOCX
   const blob = await zip.generateAsync({
     type: "blob",
