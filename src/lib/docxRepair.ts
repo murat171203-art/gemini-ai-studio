@@ -1020,25 +1020,43 @@ export async function repairDocx(file: File, university?: University, thesisType
   docXml = indentResult.xml;
   stats.indentFixes = indentResult.count;
   
-  // 7. ALGORITHM 1: Section breaks & page numbering (KTMU only)
-  if (useSectionLogic) {
+  // 7. Section breaks & page numbering
+  const xmlBeforeSections = docXml;
+  if (isUndergradTourism(thesisType)) {
+    // Tourism Faculty: strict 3-section page numbering with header (top-right)
+    try {
+      const tBound = findTourismBoundaries(docXml);
+      const tRes = insertTourismSections(docXml, tBound, margins);
+      if (tRes.mode !== "none") {
+        docXml = tRes.xml;
+        stats.sectionBreaksAdded = tRes.count;
+        stats.pageNumberFixed = true;
+        ensureTourismHeaders(zip);
+        await addTourismHeaderRelationships(zip);
+      }
+    } catch (e) {
+      // Safety fallback: keep original XML, do not break the file
+      console.warn("[docxRepair] Tourism section logic failed, falling back:", e);
+      docXml = xmlBeforeSections;
+      stats.sectionBreaksAdded = 0;
+      stats.pageNumberFixed = false;
+    }
+  } else if (useSectionLogic) {
     const boundaries = findSectionBoundaries(docXml);
     const sectionResult = insertSectionBreaks(docXml, boundaries, margins);
     docXml = sectionResult.xml;
     stats.sectionBreaksAdded = sectionResult.count;
     stats.pageNumberFixed = sectionResult.count > 0;
+    if (sectionResult.count > 0) {
+      ensureFooterFile(zip);
+      await addFooterRelationship(zip);
+    }
   }
   
   // 8. ALGORITHM 3: Table & figure renumbering
   const renumberResult = renumberTablesAndFigures(docXml);
   docXml = renumberResult.xml;
   stats.tableFigureRenumbered = renumberResult.count;
-  
-  // Setup footer file for page numbering
-  if (stats.sectionBreaksAdded > 0) {
-    ensureFooterFile(zip);
-    await addFooterRelationship(zip);
-  }
   
   // Fix styles.xml too
   const stylesFile = zip.file("word/styles.xml");
