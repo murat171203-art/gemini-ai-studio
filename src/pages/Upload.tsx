@@ -6,6 +6,7 @@ import { Upload as UploadIcon, FileText, CheckCircle, AlertTriangle, Loader2, Gr
 import bmuLogo from "@/assets/bmu-logo.jpg";
 import knuLogo from "@/assets/knu-logo.png";
 import ktuLogo from "@/assets/ktu-logo.jpg";
+import ktmuLogo from "@/assets/ktmu-logo.png";
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -152,6 +153,8 @@ const Upload = () => {
                     <img src={knuLogo} alt="КНУ" className="w-12 h-12 object-contain" />
                   ) : uni.id === "ktu" ? (
                     <img src={ktuLogo} alt="КТУ" className="w-12 h-12 object-contain" />
+                  ) : uni.id === "ktmu" ? (
+                    <img src={ktmuLogo} alt="КТМУ" className="w-12 h-12 object-contain" />
                   ) : (
                     <GraduationCap className="w-7 h-7 text-primary" />
                   )}
