@@ -227,6 +227,259 @@ function insertSectPrIntoParagraph(paraXml: string, sectPr: string): string {
 }
 
 // ============================================================
+// TOURISM FACULTY: STRICT 3-SECTION PAGE NUMBERING
+// Section 1: Covers (no page numbers)
+// Section 2: Preliminary pages (lowerRoman i, ii, iii...)
+// Section 3: Main body (decimal 1, 2, 3...)
+// Page number: top-right header, 2.5cm from top edge.
+// ============================================================
+
+const TOURISM_INTRO_KEYWORDS = [
+  "i bölüm", "i.bölüm", "1.bölüm", "1 bölüm",
+  "birinci bölüm",
+  "giriş", "giris",
+  "биринчи бөлүм", "биринчи болум",
+  "кириш", "киришүү", "киришуу",
+  "введение",
+  "introduction", "chapter 1", "chapter i",
+];
+
+const TOURISM_PRELIM_KEYWORDS = [
+  "içindekiler", "icindekiler",
+  "önsöz", "onsoz", "ön söz", "өн сөз", "он соз",
+  "özet", "ozet", "өз",
+  "abstract",
+  "мазмуну", "мазмун",
+  "содержание",
+  "preface", "contents",
+  "tablo listesi", "şekil listesi", "sekil listesi",
+  "kısaltmalar", "kisaltmalar",
+];
+
+function matchesKeyword(text: string, keywords: string[]): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t || t.length > 80) return false;
+  return keywords.some(k => t === k || t.startsWith(k + " ") || t.startsWith(k + ".") || t.startsWith(k + ":") || t.startsWith(k));
+}
+
+interface TourismBoundaries {
+  coverEndIdx: number; // last paragraph index of cover section (-1 if not found)
+  introIdx: number;    // first paragraph index of main body
+}
+
+function findTourismBoundaries(xml: string): TourismBoundaries {
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  let introIdx = -1;
+  let coverEndIdx = -1;
+  let firstPrelimIdx = -1;
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const text = extractText(paragraphs[i]).trim();
+    if (!text) continue;
+
+    if (introIdx === -1 && matchesKeyword(text, TOURISM_INTRO_KEYWORDS)) {
+      introIdx = i;
+      break;
+    }
+    if (firstPrelimIdx === -1 && matchesKeyword(text, TOURISM_PRELIM_KEYWORDS)) {
+      firstPrelimIdx = i;
+    }
+  }
+
+  if (firstPrelimIdx > 0) {
+    coverEndIdx = firstPrelimIdx - 1;
+  } else {
+    // Fallback: count first 2 explicit page breaks → covers = up to 2nd break
+    let breaks = 0;
+    for (let i = 0; i < paragraphs.length; i++) {
+      if (/<w:br[^>]*w:type="page"/.test(paragraphs[i])) {
+        breaks++;
+        if (breaks === 2) {
+          coverEndIdx = i;
+          break;
+        }
+      }
+    }
+  }
+
+  return { coverEndIdx, introIdx };
+}
+
+function buildTourismSectPr(opts: {
+  margins: typeof KTMU_MARGINS;
+  type?: "nextPage" | "continuous";
+  headerRid?: string | null; // null => no header (cover)
+  pageNumbering?: { fmt: "lowerRoman" | "decimal"; start: number };
+}): string {
+  const { margins, type, headerRid, pageNumbering } = opts;
+  const headerRef = headerRid
+    ? `<w:headerReference w:type="default" r:id="${headerRid}"/>`
+    : "";
+  const sectionType = type ? `<w:type w:val="${type}"/>` : "";
+  const pgNum = pageNumbering
+    ? `<w:pgNumType w:fmt="${pageNumbering.fmt}" w:start="${pageNumbering.start}"/>`
+    : "";
+  // header offset 1418 DXA = 2.5cm from top
+  return `<w:sectPr>${headerRef}${sectionType}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${margins.top}" w:right="${margins.right}" w:bottom="${margins.bottom}" w:left="${margins.left}" w:header="1418" w:footer="720" w:gutter="0"/>${pgNum}<w:cols w:space="720"/></w:sectPr>`;
+}
+
+function insertTourismSections(
+  xml: string,
+  boundaries: TourismBoundaries,
+  margins: typeof KTMU_MARGINS
+): { xml: string; count: number; mode: "3section" | "2section" | "none" } {
+  const { coverEndIdx, introIdx } = boundaries;
+  if (introIdx === -1) {
+    return { xml, count: 0, mode: "none" };
+  }
+
+  const bodyStartMatch = xml.match(/<w:body>/);
+  if (!bodyStartMatch) return { xml, count: 0, mode: "none" };
+  const bodyEndIdx = xml.indexOf("</w:body>");
+  if (bodyEndIdx === -1) return { xml, count: 0, mode: "none" };
+
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+
+  // Strip existing inline sectPr from paragraphs (only intermediate ones; final body sectPr is preserved separately)
+  const cleaned = paragraphs.map(p => p.replace(/<w:sectPr>[\s\S]*?<\/w:sectPr>/g, ""));
+
+  const finalSectPrMatch = xml.match(/<w:sectPr[^>]*>[\s\S]*?<\/w:sectPr>\s*<\/w:body>/);
+  let count = 0;
+  let mode: "3section" | "2section" | "none" = "none";
+
+  // 3-section mode
+  if (coverEndIdx >= 0 && coverEndIdx < introIdx - 1) {
+    // Section 1 break at end of coverEndIdx (no header, no page number)
+    const sect1 = buildTourismSectPr({
+      margins,
+      type: "nextPage",
+      headerRid: "rIdHdrBlankRepair",
+      pageNumbering: undefined,
+    });
+    cleaned[coverEndIdx] = insertSectPrIntoParagraph(cleaned[coverEndIdx], sect1);
+    count++;
+
+    // Section 2 break at end of paragraph before intro (lowerRoman from i)
+    const sect2 = buildTourismSectPr({
+      margins,
+      type: "nextPage",
+      headerRid: "rIdHdrPNRepair",
+      pageNumbering: { fmt: "lowerRoman", start: 1 },
+    });
+    cleaned[introIdx - 1] = insertSectPrIntoParagraph(cleaned[introIdx - 1], sect2);
+    count++;
+    mode = "3section";
+  } else {
+    // 2-section fallback: only break before intro (preliminary in lowerRoman)
+    if (introIdx > 0) {
+      const sect1 = buildTourismSectPr({
+        margins,
+        type: "nextPage",
+        headerRid: "rIdHdrPNRepair",
+        pageNumbering: { fmt: "lowerRoman", start: 1 },
+      });
+      cleaned[introIdx - 1] = insertSectPrIntoParagraph(cleaned[introIdx - 1], sect1);
+      count++;
+      mode = "2section";
+    } else {
+      return { xml, count: 0, mode: "none" };
+    }
+  }
+
+  // Build final sectPr (Section 3 main body): decimal start 1, with PN header
+  const finalSect = buildTourismSectPr({
+    margins,
+    type: undefined, // final sectPr has no <w:type>; defaults to nextPage
+    headerRid: "rIdHdrPNRepair",
+    pageNumbering: { fmt: "decimal", start: 1 },
+  });
+
+  // Reconstruct body
+  const beforeBody = xml.substring(0, bodyStartMatch.index! + "<w:body>".length);
+  const afterBody = "</w:body>" + xml.substring(bodyEndIdx + "</w:body>".length);
+  const bodyContent = xml.substring(bodyStartMatch.index! + "<w:body>".length, bodyEndIdx);
+  const nonParaContent = bodyContent
+    .replace(/<w:p[ >][\s\S]*?<\/w:p>/g, "")
+    .replace(/<w:sectPr[^>]*>[\s\S]*?<\/w:sectPr>/g, "")
+    .trim();
+
+  const newBody = cleaned.join("\n") + "\n" + finalSect;
+  const result = beforeBody + (nonParaContent ? nonParaContent + "\n" : "") + newBody + "\n" + afterBody;
+
+  return { xml: result, count, mode };
+}
+
+function ensureTourismHeaders(zip: JSZip): void {
+  const ns = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`;
+  const blank = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr ${ns}><w:p><w:pPr><w:pStyle w:val="Header"/></w:pPr></w:p></w:hdr>`;
+  const pn = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr ${ns}><w:p><w:pPr><w:pStyle w:val="Header"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr><w:instrText xml:space="preserve"> PAGE \\* MERGEFORMAT </w:instrText></w:r><w:r><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr><w:t>1</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="${FONT_NAME}" w:hAnsi="${FONT_NAME}" w:cs="${FONT_NAME}"/><w:sz w:val="${FONT_SIZE}"/><w:szCs w:val="${FONT_SIZE}"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r></w:p></w:hdr>`;
+  zip.file("word/header_blank_repair.xml", blank);
+  zip.file("word/header_pn_repair.xml", pn);
+}
+
+async function addTourismHeaderRelationships(zip: JSZip): Promise<void> {
+  const relsPath = "word/_rels/document.xml.rels";
+  const relsFile = zip.file(relsPath);
+  if (relsFile) {
+    let relsXml = await relsFile.async("string");
+    let changed = false;
+    if (!relsXml.includes("rIdHdrBlankRepair")) {
+      relsXml = relsXml.replace(
+        "</Relationships>",
+        `<Relationship Id="rIdHdrBlankRepair" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header_blank_repair.xml"/></Relationships>`
+      );
+      changed = true;
+    }
+    if (!relsXml.includes("rIdHdrPNRepair")) {
+      relsXml = relsXml.replace(
+        "</Relationships>",
+        `<Relationship Id="rIdHdrPNRepair" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header_pn_repair.xml"/></Relationships>`
+      );
+      changed = true;
+    }
+    if (changed) zip.file(relsPath, relsXml);
+  }
+
+  const ctFile = zip.file("[Content_Types].xml");
+  if (ctFile) {
+    let ctXml = await ctFile.async("string");
+    let changed = false;
+    if (!ctXml.includes("header_blank_repair.xml")) {
+      ctXml = ctXml.replace(
+        "</Types>",
+        `<Override PartName="/word/header_blank_repair.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>`
+      );
+      changed = true;
+    }
+    if (!ctXml.includes("header_pn_repair.xml")) {
+      ctXml = ctXml.replace(
+        "</Types>",
+        `<Override PartName="/word/header_pn_repair.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>`
+      );
+      changed = true;
+    }
+    if (changed) zip.file("[Content_Types].xml", ctXml);
+  }
+}
+
+async function validateDocxIntegrity(zip: JSZip): Promise<boolean> {
+  const required = ["[Content_Types].xml", "word/document.xml", "word/_rels/document.xml.rels"];
+  for (const f of required) {
+    if (!zip.file(f)) return false;
+  }
+  try {
+    const doc = await zip.file("word/document.xml")!.async("string");
+    if (!doc.includes("<w:body>") || !doc.includes("</w:body>")) return false;
+    if (!doc.includes("<w:document")) return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
 // ALGORITHM 2: TOC GENERATION WITH DOTTED LEADERS
 // ============================================================
 
@@ -767,25 +1020,43 @@ export async function repairDocx(file: File, university?: University, thesisType
   docXml = indentResult.xml;
   stats.indentFixes = indentResult.count;
   
-  // 7. ALGORITHM 1: Section breaks & page numbering (KTMU only)
-  if (useSectionLogic) {
+  // 7. Section breaks & page numbering
+  const xmlBeforeSections = docXml;
+  if (isUndergradTourism(thesisType)) {
+    // Tourism Faculty: strict 3-section page numbering with header (top-right)
+    try {
+      const tBound = findTourismBoundaries(docXml);
+      const tRes = insertTourismSections(docXml, tBound, margins);
+      if (tRes.mode !== "none") {
+        docXml = tRes.xml;
+        stats.sectionBreaksAdded = tRes.count;
+        stats.pageNumberFixed = true;
+        ensureTourismHeaders(zip);
+        await addTourismHeaderRelationships(zip);
+      }
+    } catch (e) {
+      // Safety fallback: keep original XML, do not break the file
+      console.warn("[docxRepair] Tourism section logic failed, falling back:", e);
+      docXml = xmlBeforeSections;
+      stats.sectionBreaksAdded = 0;
+      stats.pageNumberFixed = false;
+    }
+  } else if (useSectionLogic) {
     const boundaries = findSectionBoundaries(docXml);
     const sectionResult = insertSectionBreaks(docXml, boundaries, margins);
     docXml = sectionResult.xml;
     stats.sectionBreaksAdded = sectionResult.count;
     stats.pageNumberFixed = sectionResult.count > 0;
+    if (sectionResult.count > 0) {
+      ensureFooterFile(zip);
+      await addFooterRelationship(zip);
+    }
   }
   
   // 8. ALGORITHM 3: Table & figure renumbering
   const renumberResult = renumberTablesAndFigures(docXml);
   docXml = renumberResult.xml;
   stats.tableFigureRenumbered = renumberResult.count;
-  
-  // Setup footer file for page numbering
-  if (stats.sectionBreaksAdded > 0) {
-    ensureFooterFile(zip);
-    await addFooterRelationship(zip);
-  }
   
   // Fix styles.xml too
   const stylesFile = zip.file("word/styles.xml");
@@ -805,7 +1076,14 @@ export async function repairDocx(file: File, university?: University, thesisType
   
   // Save modified document.xml
   zip.file("word/document.xml", docXml);
-  
+
+  // Final validation: ensure ZIP package integrity (Tourism critical safety)
+  const ok = await validateDocxIntegrity(zip);
+  if (!ok) {
+    console.error("[docxRepair] Integrity check failed — returning original file to avoid corruption");
+    return { blob: new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), stats };
+  }
+
   // Generate repaired DOCX
   const blob = await zip.generateAsync({
     type: "blob",
