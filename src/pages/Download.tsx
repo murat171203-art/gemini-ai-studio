@@ -74,6 +74,12 @@ const Download = () => {
         <h1 className="text-2xl font-bold mb-2">{t.download.thankYou}</h1>
         <p className="text-muted-foreground mb-4">{fileName}</p>
 
+        {isTourism && repairStats?.pageNumberFixed && (
+          <div className="rounded-xl p-3 mb-4 bg-green-500/10 border border-green-500/30 text-sm text-green-400">
+            Tourism Faculty formatting completed successfully (3-section numbering applied)
+          </div>
+        )}
+
         {repairStats && (
           <div className="glass rounded-xl p-4 text-left text-sm space-y-1.5 mb-6">
             <div className="flex justify-between">
